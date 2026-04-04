@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ARLang/ARLang.csproj" />
+  <Project Path="FrontEnd/FrontEnd.csproj" />
+</Solution>

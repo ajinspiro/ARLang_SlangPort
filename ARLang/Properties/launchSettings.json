@@ -1,0 +1,8 @@
+{
+    "profiles": {
+        "default": {
+            "commandName": "Project",
+            "commandLineArgs": "./test.sl"
+        }
+    }
+}
