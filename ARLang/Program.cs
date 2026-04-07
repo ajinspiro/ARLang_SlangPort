@@ -8,8 +8,8 @@ CommonTokenStream tokens = new(lexer);
 ARLangParser parser = new(tokens);
 RuntimeContext runtimeContext = new();
 var module = parser.module();
-Interpreter interpreter = new(runtimeContext);
-var value = interpreter.Visit(module);
+Compiler visitor = new(runtimeContext, "ARLangDynamicAssembly");
+var value = visitor.Visit(module);
 Console.WriteLine("============RESULTS===========");
 string valueToPrint = value.Match(
     error => "Error",

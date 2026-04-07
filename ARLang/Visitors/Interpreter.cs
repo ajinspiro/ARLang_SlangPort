@@ -378,7 +378,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
 
     public override ErrorOrSuccess VisitFactor_Number([NotNull] ARLangParser.Factor_NumberContext context)
     {
-        return new Value(decimal.Parse(context.NUMBER().GetText()));
+        return new Value(double.Parse(context.NUMBER().GetText()));
     }
 
     public override ErrorOrSuccess VisitFactor_String([NotNull] ARLangParser.Factor_StringContext context)
