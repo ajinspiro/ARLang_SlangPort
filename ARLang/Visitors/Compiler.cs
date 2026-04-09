@@ -18,6 +18,7 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     private readonly ModuleBuilder moduleBuilder;
     private readonly TypeBuilder typeBuilder;
     private readonly Dictionary<string, MethodBuilder> methodBuilders = [];
+    private readonly List<LocalBuilder> variables = [];
     private NoneOrILGenerator ilGenerator = new None();
     public Compiler(RuntimeContext runtimeContext, string outputAssemblyName)
     {
@@ -43,7 +44,7 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         bool isMain = functionName == "Main";
         MethodAttributes methAttrs = MethodAttributes.Static;
         methAttrs = isMain ? methAttrs | MethodAttributes.Public : methAttrs | MethodAttributes.Private;
-        var returnType = context.TYPE().GetText() switch { "NUMERIC" => typeof(double), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), _ => typeof(void) };
+        var returnType = context.TYPE().GetText() switch { "NUMERIC" => typeof(int), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), _ => typeof(void) };
         var functionBuilder = typeBuilder.DefineMethod(functionName, methAttrs, returnType, null);
         methodBuilders[functionName] = functionBuilder;
         ilGenerator = functionBuilder.GetILGenerator();
@@ -51,6 +52,11 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
 
         if (result.IsSuccessWithType)
         {
+            if (context.TYPE().GetText() == "NUMERIC")
+            {
+                ilGenerator.AsILGenerator.Emit(OpCodes.Conv_I4);
+            }
+            ilGenerator.AsILGenerator.Emit(OpCodes.Ret);
             typeBuilder.CreateType();
             // 🔥 KEY PART: Generate metadata instead of Save()
             var metadata = assemblyBuilder.GenerateMetadata(out var ilStream, out var fieldData);
@@ -97,6 +103,24 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         ilGenerator.AsILGenerator.Emit(OpCodes.Call, wl);
         return new Success();
     }
+    public override CompilationResult VisitPrintstatement([NotNull] ARLangParser.PrintstatementContext context)
+    {
+        if (!ilGenerator.IsILGenerator) return new Error();
+        var result = Visit(context.expr());
+        if (!result.IsSuccessWithType) return new Error();
+        var type = result.AsSuccessWithType switch
+        {
+            EValueType.Numeric => typeof(double),
+            EValueType.String => typeof(string),
+            EValueType.Boolean => typeof(bool),
+            _ => typeof(void)
+        };
+        var wl = typeof(Console).GetMethod("Write", [type]);
+        if (wl is null) throw new Exception();
+        ilGenerator.AsILGenerator.Emit(OpCodes.Call, wl);
+        return new Success();
+    }
+
     public override CompilationResult VisitReturnstatement([NotNull] ARLangParser.ReturnstatementContext context)
     {
         if (!ilGenerator.IsILGenerator) return new Error();
