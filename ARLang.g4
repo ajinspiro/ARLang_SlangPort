@@ -23,7 +23,7 @@ callstatement: callexpr ';';
 ifstatement:
 	'IF' expr 'THEN' statements ('ELSE' statements)? 'ENDIF';
 whilestatement: 'WHILE' expr statements 'WEND';
-returnstatement: 'RETURN' expr ';';
+returnstatement: 'RETURN' expr? ';';
 expr: bexpr;
 bexpr: lexpr (LOGICOP lexpr)*;
 lexpr: rexpr (RELOP rexpr)?;
@@ -47,6 +47,6 @@ ADDOP: '+' | '-';
 MULOP: '*' | '/';
 NUMBER: [0-9]+;
 STRING: '"' .+? '"';
-TYPE: 'NUMERIC' | 'STRING' | 'BOOLEAN';
+TYPE: 'NUMERIC' | 'STRING' | 'BOOLEAN' | 'VOID';
 IDENTIFIER: [a-zA-Z][a-zA-Z0-9_]*;
 WS: [\t\r\n ]+ -> skip;

@@ -1,6 +1,16 @@
-FUNCTION NUMERIC Main()
+FUNCTION VOID Main()
+ PRINTLN "1<2";
  PRINTLN 1<2;
+
+ PRINTLN "1>2";
  PRINTLN 1>2;
+ 
+ PRINTLN "1+2*3";
  PRINTLN 1+2*3;
- RETURN 1;
+
+ PRINTLN "Testing variables";
+ NUMERIC num;
+ num = 123*3;
+ PRINTLN num+1;
+ RETURN;
 END
