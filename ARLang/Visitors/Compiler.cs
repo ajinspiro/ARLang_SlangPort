@@ -52,11 +52,6 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
 
         if (result.IsSuccess || result.IsSuccessWithType)
         {
-            // if (isMain && context.TYPE().GetText() == "NUMERIC")
-            // {
-            //     ilGenerator.AsILGenerator.Emit(OpCodes.Conv_I4);
-            // }
-            // ilGenerator.AsILGenerator.Emit(OpCodes.Ret);
             typeBuilder.CreateType();
             // 🔥 KEY PART: Generate metadata instead of Save()
             var metadata = assemblyBuilder.GenerateMetadata(out var ilStream, out var fieldData);
@@ -138,6 +133,31 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         ilGenerator.AsILGenerator.Emit(OpCodes.Stloc, variables[variableName].LocalBuilder);
         return new Success();
     }
+    public override CompilationResult VisitIfstatement([NotNull] ARLangParser.IfstatementContext context)
+    {
+        // 'IF' expr 'THEN' statements ('ELSE' statements)? 'ENDIF';
+        if (!ilGenerator.IsILGenerator) return new Error();
+        Label trueLabel = ilGenerator.AsILGenerator.DefineLabel();
+        Label falseLabel = ilGenerator.AsILGenerator.DefineLabel();
+        var result = Visit(context.expr());
+        if (!result.IsSuccessWithType) return new Error();
+        ilGenerator.AsILGenerator.Emit(OpCodes.Ldc_I4, 1);
+        ilGenerator.AsILGenerator.Emit(OpCodes.Ceq);
+        ilGenerator.AsILGenerator.Emit(OpCodes.Brfalse, falseLabel);
+        Visit(context.statements()[0]);
+        ilGenerator.AsILGenerator.Emit(OpCodes.Br, trueLabel);
+        ilGenerator.AsILGenerator.MarkLabel(falseLabel);
+        if (context.statements().Length == 2)
+        {
+            Visit(context.statements()[1]);
+        }
+        ilGenerator.AsILGenerator.MarkLabel(trueLabel);
+        return new Success();
+    }
+    public override CompilationResult VisitWhilestatement([NotNull] ARLangParser.WhilestatementContext context)
+    {
+        return base.VisitWhilestatement(context);
+    }
     public override CompilationResult VisitReturnstatement([NotNull] ARLangParser.ReturnstatementContext context)
     {
         if (!ilGenerator.IsILGenerator) return new Error();
@@ -189,17 +209,28 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         {
             case ">": { ilGenerator.AsILGenerator.Emit(OpCodes.Cgt); break; }
             case "<": { ilGenerator.AsILGenerator.Emit(OpCodes.Clt); break; }
-            case ">=": { ilGenerator.AsILGenerator.Emit(OpCodes.Div); break; }
-            case "<=": { ilGenerator.AsILGenerator.Emit(OpCodes.Div); break; }
+            case ">=":
+                {
+                    ilGenerator.AsILGenerator.Emit(OpCodes.Clt);
+                    ilGenerator.AsILGenerator.Emit(OpCodes.Ldc_I4, 0);
+                    ilGenerator.AsILGenerator.Emit(OpCodes.Ceq);
+                    break;
+                }
+            case "<=":
+                {
+                    ilGenerator.AsILGenerator.Emit(OpCodes.Cgt);
+                    ilGenerator.AsILGenerator.Emit(OpCodes.Ldc_I4, 0);
+                    ilGenerator.AsILGenerator.Emit(OpCodes.Ceq);
+                    break;
+                }
             case "<>":
                 {
-                    ilGenerator.AsILGenerator.Emit(OpCodes.Div);
                     ilGenerator.AsILGenerator.Emit(OpCodes.Ceq);
                     ilGenerator.AsILGenerator.Emit(OpCodes.Ldc_I4, 0);
                     ilGenerator.AsILGenerator.Emit(OpCodes.Ceq);
                     break;
                 }
-            case "==": { ilGenerator.AsILGenerator.Emit(OpCodes.Div); break; }
+            case "==": { ilGenerator.AsILGenerator.Emit(OpCodes.Ceq); break; }
             default: { throw new Exception(); }
         }
 

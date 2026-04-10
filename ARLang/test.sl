@@ -1,16 +1,14 @@
 FUNCTION VOID Main()
- PRINTLN "1<2";
- PRINTLN 1<2;
+ IF (1<2) THEN 
+  PRINTLN "WORKING"; 
+ ELSE 
+  PRINTLN "NOT WORKING"; 
+ ENDIF
 
- PRINTLN "1>2";
- PRINTLN 1>2;
- 
- PRINTLN "1+2*3";
- PRINTLN 1+2*3;
-
- PRINTLN "Testing variables";
- NUMERIC num;
- num = 123*3;
- PRINTLN num+1;
+ IF ((1+2*3)==7) THEN 
+  PRINTLN "WORKING"; 
+ ELSE 
+  PRINTLN "1"; 
+ ENDIF
  RETURN;
 END
