@@ -212,13 +212,16 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         if (!ilGenerator.IsILGenerator) return new Error();
         string functionName = context.IDENTIFIER().GetText();
         bool isSuccess = methodBuilders.TryGetValue(functionName, out ARLangFunction? func);
-        if (isSuccess)
+        if (!isSuccess)
         {
-            // var actualsResult = Visit(context.actuals());
-            ilGenerator.AsILGenerator.Emit(OpCodes.Call, func!.MethodBuilder);
-            return new Success<EValueType>(func!.ReturnType);
+            return new Error();
         }
-        return new Error();
+        if (context.actuals() is not null)
+        {
+            Visit(context.actuals());
+        }
+        ilGenerator.AsILGenerator.Emit(OpCodes.Call, func!.MethodBuilder);
+        return new Success<EValueType>(func!.ReturnType);
     }
     public override CompilationResult VisitExpr([NotNull] ARLangParser.ExprContext context)
     {   // expr: bexpr;
