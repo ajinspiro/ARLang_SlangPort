@@ -18,9 +18,9 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
     public override ErrorOrSuccess VisitProcedure([NotNull] ARLangParser.ProcedureContext context)
     {
         string functionName = context.IDENTIFIER().GetText();
-        if (functionName == "MAIN")
+        if (functionName == "Main")
         {
-            Scope mainScope = new("MAIN");
+            Scope mainScope = new("Main");
             mainScope.ParentScope = runtimeContext.Scope;
             runtimeContext.Scope = mainScope;
             var mainResult = Visit(context.statements());

@@ -1,14 +1,10 @@
 FUNCTION VOID Main()
- IF (1<2) THEN 
-  PRINTLN "WORKING"; 
- ELSE 
-  PRINTLN "NOT WORKING"; 
- ENDIF
-
- IF ((1+2*3)==7) THEN 
-  PRINTLN "WORKING"; 
- ELSE 
-  PRINTLN "1"; 
- ENDIF
+ NUMERIC num;
+ num=(1+2*3);
+ WHILE (num>=0)  
+  PRINT "num="; 
+  PRINTLN num;
+  num=num-1;
+ WEND
  RETURN;
 END

@@ -155,8 +155,20 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         return new Success();
     }
     public override CompilationResult VisitWhilestatement([NotNull] ARLangParser.WhilestatementContext context)
-    {
-        return base.VisitWhilestatement(context);
+    {   // 'WHILE' expr statements 'WEND';
+        if (!ilGenerator.IsILGenerator) return new Error();
+        Label trueLabel = ilGenerator.AsILGenerator.DefineLabel();
+        Label falseLabel = ilGenerator.AsILGenerator.DefineLabel();
+        ilGenerator.AsILGenerator.MarkLabel(trueLabel);
+        var result = Visit(context.expr());
+        if (!result.IsSuccessWithType) return new Error();
+        ilGenerator.AsILGenerator.Emit(OpCodes.Ldc_I4, 1);
+        ilGenerator.AsILGenerator.Emit(OpCodes.Ceq);
+        ilGenerator.AsILGenerator.Emit(OpCodes.Brfalse, falseLabel);
+        Visit(context.statements());
+        ilGenerator.AsILGenerator.Emit(OpCodes.Br, trueLabel);
+        ilGenerator.AsILGenerator.MarkLabel(falseLabel);
+        return new Success();
     }
     public override CompilationResult VisitReturnstatement([NotNull] ARLangParser.ReturnstatementContext context)
     {
