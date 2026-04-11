@@ -1,3 +1,7 @@
+FUNCTION NUMERIC SomethingElse(NUMERIC num)
+ RETURN 1;
+END
+
 FUNCTION VOID Main()
  NUMERIC num;
  num=(1+2*3);

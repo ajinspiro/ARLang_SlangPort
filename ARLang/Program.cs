@@ -14,6 +14,8 @@ Console.WriteLine("============RESULTS===========");
 string valueToPrint = value.Match(
     error => "Error",
     success => "Success (no value)",
-    successWithValue => "Success with value: {successWithValue.Match(d => d.ToString(), s => s, b => b.ToString(), n => '<none>')}"
+    successWithValue => "Success with value: {successWithValue.Match(d => d.ToString(), s => s, b => b.ToString(), n => '<none>')}",
+    error => "Error",
+    error => "Error"
 );
 Console.WriteLine(valueToPrint);

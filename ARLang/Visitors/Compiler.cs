@@ -39,18 +39,32 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         return context.procedure().Select(Visit).ToList().Last();
     }
     public override CompilationResult VisitProcedure([NotNull] ARLangParser.ProcedureContext context)
-    {
+    {   // 'FUNCTION' TYPE IDENTIFIER '(' arglist? ')' statements 'END'
         string functionName = context.IDENTIFIER().GetText();
         bool isMain = functionName == "Main";
         MethodAttributes methAttrs = MethodAttributes.Static;
         methAttrs = isMain ? methAttrs | MethodAttributes.Public : methAttrs | MethodAttributes.Private;
         var returnType = context.TYPE().GetText() switch { "NUMERIC" => typeof(int), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), "VOID" => typeof(void), _ => typeof(void) };
-        var functionBuilder = typeBuilder.DefineMethod(functionName, methAttrs, returnType, null);
+        Type[]? parameterTypes = null;
+        if (!isMain)
+        {
+            var argListResult = Visit(context.arglist());
+            if (!argListResult.IsSuccessWithDic) return new Error();
+            parameterTypes = argListResult.AsSuccessWithDic.Values.ToArray();
+        }
+        var functionBuilder = typeBuilder.DefineMethod(functionName, methAttrs, returnType, parameterTypes);
         methodBuilders[functionName] = functionBuilder;
         ilGenerator = functionBuilder.GetILGenerator();
+        // if (parameterTypes.Length > 0)
+        // {
+        //     foreach (var item in argListResult.AsSuccessWithDic)
+        //     {
+        //         variables[item.Key] = new(ilGenerator.AsILGenerator.);
+        //     }
+        // }
         var result = Visit(context.statements());
 
-        if (result.IsSuccess || result.IsSuccessWithType)
+        if (isMain && (result.IsSuccess || result.IsSuccessWithType))
         {
             typeBuilder.CreateType();
             // 🔥 KEY PART: Generate metadata instead of Save()
@@ -76,6 +90,18 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
             return new Success();
         }
         return new Error();
+    }
+    public override CompilationResult VisitArglist([NotNull] ARLangParser.ArglistContext context)
+    {
+        // arglist: arg (',' arg)*;
+        // arg: TYPE IDENTIFIER;
+        var result = context.arg().Select(Visit).Select(x => x.AsSuccessWithArgs).ToList();
+        return result.ToDictionary();
+    }
+    public override CompilationResult VisitArg([NotNull] ARLangParser.ArgContext context)
+    {   // arg: TYPE IDENTIFIER;
+        Type argType = context.TYPE().GetText() switch { "NUMERIC" => typeof(int), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), "VOID" => typeof(void), _ => typeof(void) };
+        return new KeyValuePair<string, Type>(context.IDENTIFIER().GetText(), argType);
     }
     public override CompilationResult VisitStatements([NotNull] ARLangParser.StatementsContext context)
     {
@@ -135,7 +161,7 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     }
     public override CompilationResult VisitIfstatement([NotNull] ARLangParser.IfstatementContext context)
     {
-        // 'IF' expr 'THEN' statements ('ELSE' statements)? 'ENDIF';
+        // 'IF' expr 'THEN' statements ('ELSE' statements)? 'ENDIF'
         if (!ilGenerator.IsILGenerator) return new Error();
         Label trueLabel = ilGenerator.AsILGenerator.DefineLabel();
         Label falseLabel = ilGenerator.AsILGenerator.DefineLabel();
