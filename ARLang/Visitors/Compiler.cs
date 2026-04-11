@@ -58,7 +58,8 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         methodBuilders[functionName] = functionBuilder;
         ilGenerator = functionBuilder.GetILGenerator();
         var result = Visit(context.statements());
-
+        parameters.Clear();
+        variables.Clear();
         if (isMain && (result.IsSuccess || result.IsSuccessWithType))
         {
             typeBuilder.CreateType();
