@@ -1,15 +1,16 @@
-FUNCTION NUMERIC SomethingElse(NUMERIC num)
- PRINTLN num;
- RETURN 1;
+FUNCTION NUMERIC PrintArgument(NUMERIC pnum)
+ PRINTLN "PrintArgument";
+ RETURN 143+pnum;
+END
+
+FUNCTION NUMERIC Test()
+    RETURN 123;
 END
 
 FUNCTION VOID Main()
  NUMERIC num;
- num=(1+2*3);
- WHILE (num>=0)  
-  PRINT "num="; 
-  PRINTLN num;
-  num=num-1;
- WEND
+ num=PrintArgument(1);
+ PRINT "num=";
+ PRINTLN num;
  RETURN;
 END

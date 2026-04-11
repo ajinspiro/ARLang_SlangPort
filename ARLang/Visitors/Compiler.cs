@@ -17,7 +17,7 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     private readonly PersistedAssemblyBuilder assemblyBuilder;
     private readonly ModuleBuilder moduleBuilder;
     private readonly TypeBuilder typeBuilder;
-    private readonly Dictionary<string, MethodBuilder> methodBuilders = [];
+    private readonly Dictionary<string, ARLangFunction> methodBuilders = [];
     private readonly Dictionary<string, Variable> variables = [];
     private Dictionary<string, Type> parameters = [];
     private NoneOrILGenerator ilGenerator = new None();
@@ -45,9 +45,10 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         bool isMain = functionName == "Main";
         MethodAttributes methAttrs = MethodAttributes.Static;
         methAttrs = isMain ? methAttrs | MethodAttributes.Public : methAttrs | MethodAttributes.Private;
-        var returnType = context.TYPE().GetText() switch { "NUMERIC" => typeof(int), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), "VOID" => typeof(void), _ => typeof(void) };
+        var returnType = context.TYPE().GetText() switch { "NUMERIC" => isMain ? typeof(int) : typeof(double), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), "VOID" => typeof(void), _ => typeof(void) };
+        var returnTypeAsEValueType = context.TYPE().GetText() switch { "NUMERIC" => EValueType.Numeric, "BOOLEAN" => EValueType.Boolean, "STRING" => EValueType.String, "VOID" => EValueType.None, _ => EValueType.None };
         Type[]? parameterTypes = null;
-        if (!isMain)
+        if (!isMain && context.arglist() is not null)
         {
             var argListResult = Visit(context.arglist());
             if (!argListResult.IsSuccessWithDic) return new Error();
@@ -55,7 +56,7 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
             parameters = argListResult.AsSuccessWithDic;
         }
         var functionBuilder = typeBuilder.DefineMethod(functionName, methAttrs, returnType, parameterTypes);
-        methodBuilders[functionName] = functionBuilder;
+        methodBuilders[functionName] = new(functionBuilder, returnTypeAsEValueType);
         ilGenerator = functionBuilder.GetILGenerator();
         var result = Visit(context.statements());
         parameters.Clear();
@@ -205,6 +206,20 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         ilGenerator.AsILGenerator.Emit(OpCodes.Ret);
         return result;
     }
+    public override CompilationResult VisitCallexpr([NotNull] ARLangParser.CallexprContext context)
+    {   // callexpr: IDENTIFIER '(' actuals? ')';
+        // actuals: expr (',' expr)*;
+        if (!ilGenerator.IsILGenerator) return new Error();
+        string functionName = context.IDENTIFIER().GetText();
+        bool isSuccess = methodBuilders.TryGetValue(functionName, out ARLangFunction? func);
+        if (isSuccess)
+        {
+            // var actualsResult = Visit(context.actuals());
+            ilGenerator.AsILGenerator.Emit(OpCodes.Call, func!.MethodBuilder);
+            return new Success<EValueType>(func!.ReturnType);
+        }
+        return new Error();
+    }
     public override CompilationResult VisitExpr([NotNull] ARLangParser.ExprContext context)
     {   // expr: bexpr;
         if (!ilGenerator.IsILGenerator) return new Error();
@@ -334,14 +349,6 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         ilGenerator.AsILGenerator.Emit(OpCodes.Ldc_I4, 0);
         return new Success<EValueType>(EValueType.Boolean);
     }
-    public CompilationResult VisitFactor_IDENTIFIER0([NotNull] ARLangParser.Factor_IDENTIFIERContext context)
-    {
-        if (!ilGenerator.IsILGenerator) return new Error();
-        ilGenerator.AsILGenerator.Emit(OpCodes.Ldloc, variables[context.IDENTIFIER().GetText()].LocalBuilder);
-        string typeStr = variables[context.IDENTIFIER().GetText()].Type;
-        EValueType type = typeStr switch { "NUMERIC" => EValueType.Numeric, "BOOLEAN" => EValueType.Boolean, "STRING" => EValueType.String, _ => EValueType.None };
-        return new Success<EValueType>(type);
-    }
     public override CompilationResult VisitFactor_IDENTIFIER([NotNull] ARLangParser.Factor_IDENTIFIERContext context)
     {
         if (!ilGenerator.IsILGenerator) return new Error();
@@ -426,8 +433,9 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     }
     public override CompilationResult VisitFactor_CallExpr([NotNull] ARLangParser.Factor_CallExprContext context)
     {
-        return base.VisitFactor_CallExpr(context);
+        return Visit(context.callexpr());
     }
 }
 
 public record Variable(LocalBuilder LocalBuilder, string Type);
+public record ARLangFunction(MethodBuilder MethodBuilder, EValueType ReturnType);
