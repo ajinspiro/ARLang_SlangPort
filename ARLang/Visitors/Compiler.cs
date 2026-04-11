@@ -19,6 +19,7 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     private readonly TypeBuilder typeBuilder;
     private readonly Dictionary<string, MethodBuilder> methodBuilders = [];
     private readonly Dictionary<string, Variable> variables = [];
+    private Dictionary<string, Type> parameters = [];
     private NoneOrILGenerator ilGenerator = new None();
     public Compiler(RuntimeContext runtimeContext, string outputAssemblyName)
     {
@@ -51,17 +52,11 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
             var argListResult = Visit(context.arglist());
             if (!argListResult.IsSuccessWithDic) return new Error();
             parameterTypes = argListResult.AsSuccessWithDic.Values.ToArray();
+            parameters = argListResult.AsSuccessWithDic;
         }
         var functionBuilder = typeBuilder.DefineMethod(functionName, methAttrs, returnType, parameterTypes);
         methodBuilders[functionName] = functionBuilder;
         ilGenerator = functionBuilder.GetILGenerator();
-        // if (parameterTypes.Length > 0)
-        // {
-        //     foreach (var item in argListResult.AsSuccessWithDic)
-        //     {
-        //         variables[item.Key] = new(ilGenerator.AsILGenerator.);
-        //     }
-        // }
         var result = Visit(context.statements());
 
         if (isMain && (result.IsSuccess || result.IsSuccessWithType))
@@ -100,7 +95,7 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     }
     public override CompilationResult VisitArg([NotNull] ARLangParser.ArgContext context)
     {   // arg: TYPE IDENTIFIER;
-        Type argType = context.TYPE().GetText() switch { "NUMERIC" => typeof(int), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), "VOID" => typeof(void), _ => typeof(void) };
+        Type argType = context.TYPE().GetText() switch { "NUMERIC" => typeof(double), "BOOLEAN" => typeof(bool), "STRING" => typeof(string), "VOID" => typeof(void), _ => typeof(void) };
         return new KeyValuePair<string, Type>(context.IDENTIFIER().GetText(), argType);
     }
     public override CompilationResult VisitStatements([NotNull] ARLangParser.StatementsContext context)
@@ -338,13 +333,52 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         ilGenerator.AsILGenerator.Emit(OpCodes.Ldc_I4, 0);
         return new Success<EValueType>(EValueType.Boolean);
     }
-    public override CompilationResult VisitFactor_IDENTIFIER([NotNull] ARLangParser.Factor_IDENTIFIERContext context)
+    public CompilationResult VisitFactor_IDENTIFIER0([NotNull] ARLangParser.Factor_IDENTIFIERContext context)
     {
         if (!ilGenerator.IsILGenerator) return new Error();
         ilGenerator.AsILGenerator.Emit(OpCodes.Ldloc, variables[context.IDENTIFIER().GetText()].LocalBuilder);
         string typeStr = variables[context.IDENTIFIER().GetText()].Type;
         EValueType type = typeStr switch { "NUMERIC" => EValueType.Numeric, "BOOLEAN" => EValueType.Boolean, "STRING" => EValueType.String, _ => EValueType.None };
         return new Success<EValueType>(type);
+    }
+    public override CompilationResult VisitFactor_IDENTIFIER([NotNull] ARLangParser.Factor_IDENTIFIERContext context)
+    {
+        if (!ilGenerator.IsILGenerator) return new Error();
+        bool isSuccess1 = variables.TryGetValue(context.IDENTIFIER().GetText(), out Variable? variable);
+        if (isSuccess1)
+        {
+            ilGenerator.AsILGenerator.Emit(OpCodes.Ldloc, variable!.LocalBuilder);
+            string typeStr = variable.Type;
+            EValueType type = typeStr switch { "NUMERIC" => EValueType.Numeric, "BOOLEAN" => EValueType.Boolean, "STRING" => EValueType.String, _ => EValueType.None };
+            return new Success<EValueType>(type);
+        }
+
+        try
+        {
+            var parameterWithIndex = parameters.Index().First(x => x.Item.Key == context.IDENTIFIER().GetText());
+            ilGenerator.AsILGenerator.Emit(OpCodes.Ldarg, parameterWithIndex.Index);
+            Type doubleType = typeof(double);
+            if (typeof(double) == parameterWithIndex.Item.Value)
+            {
+                return new Success<EValueType>(EValueType.Numeric);
+            }
+            else if (typeof(string) == parameterWithIndex.Item.Value)
+            {
+                return new Success<EValueType>(EValueType.String);
+            }
+            else if (typeof(bool) == parameterWithIndex.Item.Value)
+            {
+                return new Success<EValueType>(EValueType.Boolean);
+            }
+            else
+            {
+                return new Error();
+            }
+        }
+        catch
+        {
+            return new Error();
+        }
     }
     public override CompilationResult VisitFactor_NestedExpr([NotNull] ARLangParser.Factor_NestedExprContext context)
     {
