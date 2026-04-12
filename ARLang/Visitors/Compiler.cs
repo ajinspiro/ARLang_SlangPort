@@ -208,7 +208,6 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     }
     public override CompilationResult VisitCallexpr([NotNull] ARLangParser.CallexprContext context)
     {   // callexpr: IDENTIFIER '(' actuals? ')';
-        // actuals: expr (',' expr)*;
         if (!ilGenerator.IsILGenerator) return new Error();
         string functionName = context.IDENTIFIER().GetText();
         bool isSuccess = methodBuilders.TryGetValue(functionName, out ARLangFunction? func);
@@ -222,6 +221,12 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
         }
         ilGenerator.AsILGenerator.Emit(OpCodes.Call, func!.MethodBuilder);
         return new Success<EValueType>(func!.ReturnType);
+    }
+    public override CompilationResult VisitActuals([NotNull] ARLangParser.ActualsContext context)
+    {
+        // actuals: expr (',' expr)*;
+        context.expr().Select(Visit).ToList();
+        return new Success();
     }
     public override CompilationResult VisitExpr([NotNull] ARLangParser.ExprContext context)
     {   // expr: bexpr;
@@ -337,7 +342,8 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     public override CompilationResult VisitFactor_String([NotNull] ARLangParser.Factor_StringContext context)
     {
         if (!ilGenerator.IsILGenerator) return new Error();
-        ilGenerator.AsILGenerator.Emit(OpCodes.Ldstr, context.STRING().GetText());
+        string stringValue = context.STRING().GetText();
+        ilGenerator.AsILGenerator.Emit(OpCodes.Ldstr, stringValue.Substring(1, stringValue.Length - 2));
         return new Success<EValueType>(EValueType.String);
     }
     public override CompilationResult VisitFactor_BoolTrue([NotNull] ARLangParser.Factor_BoolTrueContext context)
