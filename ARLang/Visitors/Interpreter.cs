@@ -11,8 +11,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
     public override ErrorOrSuccess VisitModule([NotNull] ARLangParser.ModuleContext context)
     {
         var list = context.procedure().Select(Visit).ToList();
-        var mainResult = list.FirstOrDefault(x => x.IsSuccessWithValue);
-        return mainResult is not null ? mainResult.AsSuccessWithValue : new Error();
+        return list.Last(); // result of main function 
     }
 
     public override ErrorOrSuccess VisitProcedure([NotNull] ARLangParser.ProcedureContext context)
@@ -107,7 +106,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
 
     public override ErrorOrSuccess VisitReturnstatement([NotNull] ARLangParser.ReturnstatementContext context)
     {
-        return Visit(context.expr());
+        return context.expr() is null ? new Success() : Visit(context.expr());
     }
 
     public override ErrorOrSuccess VisitExpr([NotNull] ARLangParser.ExprContext context)

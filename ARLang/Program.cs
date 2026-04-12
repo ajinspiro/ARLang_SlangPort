@@ -2,7 +2,7 @@
 using ARLang.Internals;
 using ARLang.Visitors;
 
-ICharStream input = args.Length == 1 ? CharStreams.fromString(await File.ReadAllTextAsync(args[0])) : CharStreams.fromStream(Console.OpenStandardInput());
+ICharStream input = CharStreams.fromString(await File.ReadAllTextAsync(args[0]));
 ARLangLexer lexer = new(input);
 CommonTokenStream tokens = new(lexer);
 ARLangParser parser = new(tokens);
