@@ -9,8 +9,23 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
 
     public override InterpreterResult VisitModule([NotNull] ARLangParser.ModuleContext context)
     {
-        var list = context.procedure().Select(Visit).ToList();
-        return list.Last(); // result of main function 
+        Scope mainScope = new("MainScope");
+        InterpreterResult result = new None();
+        for (int i = 0; i < context.procedure().Length; i++)
+        {
+            if (context.procedure()[i].IDENTIFIER().GetText() == "Main")
+            {
+                mainScope.ParentScope = runtimeContext.Scope;
+                runtimeContext.Scope = mainScope;
+            }
+            var tempResult = Visit(context.procedure()[i]);
+            if (context.procedure()[i].IDENTIFIER().GetText() == "Main")
+            {
+                runtimeContext.Scope = mainScope.ParentScope!;
+                result = tempResult;
+            }
+        }
+        return result;
     }
 
     public override InterpreterResult VisitProcedure([NotNull] ARLangParser.ProcedureContext context)
@@ -18,12 +33,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
         string functionName = context.IDENTIFIER().GetText();
         if (functionName == "Main")
         {
-            Scope mainScope = new("Main");
-            mainScope.ParentScope = runtimeContext.Scope;
-            runtimeContext.Scope = mainScope;
-            var mainResult = Visit(context.statements());
-            runtimeContext.Scope = mainScope.ParentScope!;
-            return mainResult;
+            return Visit(context.statements());
         }
         string returnType = context.TYPE().GetText();
         Dictionary<string, string> parameters;
@@ -238,6 +248,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
             },
             x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
+            x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression"
         ));
         return new Success();
@@ -255,6 +266,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
                     d => d.ToString(), s => s, b => b.ToString(), n => "<None>"
                 );
             },
+            x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression"
@@ -402,6 +414,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
             error => error,
             success => new Error(),
             successWithValue => successWithValue,
+            x => new Error(),
             x => new Error(),
             x => new Error(),
             x => new Error()
