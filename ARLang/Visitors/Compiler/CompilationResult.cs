@@ -1,7 +1,7 @@
 using OneOf;
 using OneOf.Types;
 
-namespace ARLang.Internals;
+namespace ARLang.Visitors.Compiler;
 
 [GenerateOneOf]
 public partial class CompilationResult : OneOfBase<Error, Success, Success<EValueType>, KeyValuePair<string, Type>, Dictionary<string, Type>>
@@ -17,4 +17,9 @@ public partial class CompilationResult : OneOfBase<Error, Success, Success<EValu
     public EValueType AsSuccessWithType => AsT2.Value;
     public KeyValuePair<string, Type> AsSuccessWithArgs => AsT3;
     public Dictionary<string, Type> AsSuccessWithDic => AsT4;
+}
+
+public enum EValueType
+{
+    None, Numeric, String, Boolean
 }

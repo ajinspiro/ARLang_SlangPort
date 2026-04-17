@@ -1,14 +1,14 @@
 using OneOf.Types;
 
-namespace ARLang.Internals;
+namespace ARLang.Visitors.Interpreter;
 
-public class ScopeForCompiler(string name)
+public class Scope(string name)
 {
     private readonly string _name = name;
     private readonly Dictionary<string, Variable> symbols = [];
-    public ScopeForCompiler? ParentScope { get; set; } = null;
+    public Scope? ParentScope { get; set; } = null;
 
-    public ErrorOrSuccess Declare(string name, string type)
+    public InterpreterResult Declare(string name, string type)
     {
         if (symbols.ContainsKey(name))
         {
@@ -18,7 +18,7 @@ public class ScopeForCompiler(string name)
         return new Success();
     }
 
-    public ErrorOrSuccess Assign(string name, Value value)
+    public InterpreterResult Assign(string name, Value value)
     {
         bool isVarialbeDeclared = symbols.TryGetValue(name, out Variable? variable);
         if (isVarialbeDeclared)
@@ -36,7 +36,7 @@ public class ScopeForCompiler(string name)
         return ParentScope.Assign(name, value);
     }
 
-    public ErrorOrSuccess Resolve(string name)
+    public InterpreterResult Resolve(string name)
     {
         bool isVariableDefinedInCurrentScope = symbols.TryGetValue(name, out Variable? variable);
         if (isVariableDefinedInCurrentScope)
@@ -50,3 +50,5 @@ public class ScopeForCompiler(string name)
         return ParentScope.Resolve(name);
     }
 }
+
+public record Variable(string Type, Value Value);

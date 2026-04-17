@@ -5,15 +5,12 @@ using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using Antlr4.Runtime.Misc;
-using ARLang.Internals;
-using OneOf;
 using OneOf.Types;
 
-namespace ARLang.Visitors;
+namespace ARLang.Visitors.Compiler;
 
 public class Compiler : ARLangBaseVisitor<CompilationResult>
 {
-    private readonly RuntimeContext runtimeContext;
     private readonly PersistedAssemblyBuilder assemblyBuilder;
     private readonly ModuleBuilder moduleBuilder;
     private readonly TypeBuilder typeBuilder;
@@ -21,9 +18,8 @@ public class Compiler : ARLangBaseVisitor<CompilationResult>
     private readonly Dictionary<string, Variable> variables = [];
     private Dictionary<string, Type> parameters = [];
     private NoneOrILGenerator ilGenerator = new None();
-    public Compiler(RuntimeContext runtimeContext, string outputAssemblyName)
+    public Compiler(string outputAssemblyName)
     {
-        this.runtimeContext = runtimeContext;
         AssemblyName assemblyName = new(outputAssemblyName)
         {
             Version = new(1, 0, 0, 0)

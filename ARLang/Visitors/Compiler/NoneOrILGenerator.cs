@@ -1,9 +1,8 @@
-using System;
 using System.Reflection.Emit;
 using OneOf;
 using OneOf.Types;
 
-namespace ARLang.Internals;
+namespace ARLang.Visitors.Compiler;
 
 [GenerateOneOf]
 public partial class NoneOrILGenerator : OneOfBase<None, ILGenerator>

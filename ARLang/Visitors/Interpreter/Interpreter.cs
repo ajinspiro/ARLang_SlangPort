@@ -1,20 +1,19 @@
 using Antlr4.Runtime.Misc;
-using ARLang.Internals;
 using OneOf.Types;
 
-namespace ARLang.Visitors;
+namespace ARLang.Visitors.Interpreter;
 
-public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<ErrorOrSuccess>
+public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<InterpreterResult>
 {
     private readonly RuntimeContext runtimeContext = runtimeContext;
 
-    public override ErrorOrSuccess VisitModule([NotNull] ARLangParser.ModuleContext context)
+    public override InterpreterResult VisitModule([NotNull] ARLangParser.ModuleContext context)
     {
         var list = context.procedure().Select(Visit).ToList();
         return list.Last(); // result of main function 
     }
 
-    public override ErrorOrSuccess VisitProcedure([NotNull] ARLangParser.ProcedureContext context)
+    public override InterpreterResult VisitProcedure([NotNull] ARLangParser.ProcedureContext context)
     {
         string functionName = context.IDENTIFIER().GetText();
         if (functionName == "Main")
@@ -50,19 +49,19 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return new Success();
     }
 
-    public override ErrorOrSuccess VisitArglist([NotNull] ARLangParser.ArglistContext context)
+    public override InterpreterResult VisitArglist([NotNull] ARLangParser.ArglistContext context)
     {
         var visitedArgs = context.arg().Select(Visit).ToList();
         if (visitedArgs.All(x => !x.IsSuccessWithKeyValuePair)) return new Error();
         return visitedArgs.Select(x => x.AsSuccessWithKeyValuePair).ToDictionary();
     }
 
-    public override ErrorOrSuccess VisitArg([NotNull] ARLangParser.ArgContext context)
+    public override InterpreterResult VisitArg([NotNull] ARLangParser.ArgContext context)
     {
         return new KeyValuePair<string, string>(context.TYPE().GetText(), context.IDENTIFIER().GetText());
     }
 
-    public override ErrorOrSuccess VisitIfstatement([NotNull] ARLangParser.IfstatementContext context)
+    public override InterpreterResult VisitIfstatement([NotNull] ARLangParser.IfstatementContext context)
     {
         Scope ifScope = new("IF");
         ifScope.ParentScope = runtimeContext.Scope;
@@ -87,7 +86,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         }
     }
 
-    public override ErrorOrSuccess VisitWhilestatement([NotNull] ARLangParser.WhilestatementContext context)
+    public override InterpreterResult VisitWhilestatement([NotNull] ARLangParser.WhilestatementContext context)
     {
         while (true)
         {
@@ -104,17 +103,17 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         }
     }
 
-    public override ErrorOrSuccess VisitReturnstatement([NotNull] ARLangParser.ReturnstatementContext context)
+    public override InterpreterResult VisitReturnstatement([NotNull] ARLangParser.ReturnstatementContext context)
     {
         return context.expr() is null ? new Success() : Visit(context.expr());
     }
 
-    public override ErrorOrSuccess VisitExpr([NotNull] ARLangParser.ExprContext context)
+    public override InterpreterResult VisitExpr([NotNull] ARLangParser.ExprContext context)
     {
         return Visit(context.bexpr());
     }
 
-    public override ErrorOrSuccess VisitCallexpr([NotNull] ARLangParser.CallexprContext context)
+    public override InterpreterResult VisitCallexpr([NotNull] ARLangParser.CallexprContext context)
     {
         string nameOfFunctionToCall = context.IDENTIFIER().GetText();
         var fnDef = runtimeContext.FunctionDefinitions.FirstOrDefault(x => x.Name == nameOfFunctionToCall);
@@ -150,7 +149,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return result;
     }
 
-    public override ErrorOrSuccess VisitActuals([NotNull] ARLangParser.ActualsContext context)
+    public override InterpreterResult VisitActuals([NotNull] ARLangParser.ActualsContext context)
     {
         var visitedArguments = context.expr().Select(Visit);
         if (!visitedArguments.All(x => x.IsSuccessWithValue))
@@ -160,9 +159,9 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return visitedArguments.Select(x => x.AsSuccessWithValue).ToArray();
     }
 
-    public override ErrorOrSuccess VisitStatements([NotNull] ARLangParser.StatementsContext context)
+    public override InterpreterResult VisitStatements([NotNull] ARLangParser.StatementsContext context)
     {
-        ErrorOrSuccess last = new Success();
+        InterpreterResult last = new Success();
         foreach (var statement in context.statement())
         {
             last = Visit(statement);
@@ -171,7 +170,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return last;
     }
 
-    public override ErrorOrSuccess VisitStatement([NotNull] ARLangParser.StatementContext context)
+    public override InterpreterResult VisitStatement([NotNull] ARLangParser.StatementContext context)
     {
         if (context.vardeclstatement() is not null)
         {
@@ -211,7 +210,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         }
     }
 
-    public override ErrorOrSuccess VisitAssignmentstatement([NotNull] ARLangParser.AssignmentstatementContext context)
+    public override InterpreterResult VisitAssignmentstatement([NotNull] ARLangParser.AssignmentstatementContext context)
     {
         var exprResult = Visit(context.expr());
         if (!exprResult.IsSuccessWithValue) return new Error();
@@ -219,13 +218,13 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return new Success();
     }
 
-    public override ErrorOrSuccess VisitVardeclstatement([NotNull] ARLangParser.VardeclstatementContext context)
+    public override InterpreterResult VisitVardeclstatement([NotNull] ARLangParser.VardeclstatementContext context)
     {
         runtimeContext.Scope.Declare(context.IDENTIFIER().GetText(), context.TYPE().GetText());
         return new Success();
     }
 
-    public override ErrorOrSuccess VisitPrintlinestatement([NotNull] ARLangParser.PrintlinestatementContext context)
+    public override InterpreterResult VisitPrintlinestatement([NotNull] ARLangParser.PrintlinestatementContext context)
     {
         var result = Visit(context.expr());
         Console.WriteLine(result.Match(
@@ -244,7 +243,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return new Success();
     }
 
-    public override ErrorOrSuccess VisitPrintstatement([NotNull] ARLangParser.PrintstatementContext context)
+    public override InterpreterResult VisitPrintstatement([NotNull] ARLangParser.PrintstatementContext context)
     {
         var result = Visit(context.expr());
         Console.Write(result.Match(
@@ -263,7 +262,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return new Success();
     }
 
-    public override ErrorOrSuccess VisitBexpr([NotNull] ARLangParser.BexprContext context)
+    public override InterpreterResult VisitBexpr([NotNull] ARLangParser.BexprContext context)
     {
         var left = Visit(context.lexpr()[0]);
         if (!left.IsSuccessWithValue) return left;
@@ -289,7 +288,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return new Value(lv);
     }
 
-    public override ErrorOrSuccess VisitLexpr([NotNull] ARLangParser.LexprContext context)
+    public override InterpreterResult VisitLexpr([NotNull] ARLangParser.LexprContext context)
     {
         var left = Visit(context.rexpr()[0]);
         if (!left.IsSuccessWithValue) return left;
@@ -321,7 +320,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return new Value(comparison);
     }
 
-    public override ErrorOrSuccess VisitRexpr([NotNull] ARLangParser.RexprContext context)
+    public override InterpreterResult VisitRexpr([NotNull] ARLangParser.RexprContext context)
     {
         var result = Visit(context.term()[0]);
         if (!result.IsSuccessWithValue) return result;
@@ -348,7 +347,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return result;
     }
 
-    public override ErrorOrSuccess VisitTerm([NotNull] ARLangParser.TermContext context)
+    public override InterpreterResult VisitTerm([NotNull] ARLangParser.TermContext context)
     {
         var result = Visit(context.factor()[0]);
         if (!result.IsSuccessWithValue) return result;
@@ -375,31 +374,31 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         return result;
     }
 
-    public override ErrorOrSuccess VisitFactor_Number([NotNull] ARLangParser.Factor_NumberContext context)
+    public override InterpreterResult VisitFactor_Number([NotNull] ARLangParser.Factor_NumberContext context)
     {
         return new Value(double.Parse(context.NUMBER().GetText()));
     }
 
-    public override ErrorOrSuccess VisitFactor_String([NotNull] ARLangParser.Factor_StringContext context)
+    public override InterpreterResult VisitFactor_String([NotNull] ARLangParser.Factor_StringContext context)
     {
         string value = context.STRING().GetText();
         return new Value(value.Substring(1, value.Length - 2));
     }
 
-    public override ErrorOrSuccess VisitFactor_BoolTrue([NotNull] ARLangParser.Factor_BoolTrueContext context)
+    public override InterpreterResult VisitFactor_BoolTrue([NotNull] ARLangParser.Factor_BoolTrueContext context)
     {
         return new Value(true);
     }
 
-    public override ErrorOrSuccess VisitFactor_BoolFalse([NotNull] ARLangParser.Factor_BoolFalseContext context)
+    public override InterpreterResult VisitFactor_BoolFalse([NotNull] ARLangParser.Factor_BoolFalseContext context)
     {
         return new Value(false);
     }
 
-    public override ErrorOrSuccess VisitFactor_IDENTIFIER([NotNull] ARLangParser.Factor_IDENTIFIERContext context)
+    public override InterpreterResult VisitFactor_IDENTIFIER([NotNull] ARLangParser.Factor_IDENTIFIERContext context)
     {
         var variable = runtimeContext.Scope.Resolve(context.IDENTIFIER().GetText());
-        return variable.Match<ErrorOrSuccess>(
+        return variable.Match<InterpreterResult>(
             error => error,
             success => new Error(),
             successWithValue => successWithValue,
@@ -409,12 +408,12 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         );
     }
 
-    public override ErrorOrSuccess VisitFactor_NestedExpr([NotNull] ARLangParser.Factor_NestedExprContext context)
+    public override InterpreterResult VisitFactor_NestedExpr([NotNull] ARLangParser.Factor_NestedExprContext context)
     {
         return Visit(context.expr());
     }
 
-    public override ErrorOrSuccess VisitFactor_UnaryFactor([NotNull] ARLangParser.Factor_UnaryFactorContext context)
+    public override InterpreterResult VisitFactor_UnaryFactor([NotNull] ARLangParser.Factor_UnaryFactorContext context)
     {
         var right = Visit(context.factor());
         if (!right.IsSuccessWithValue)
@@ -432,13 +431,13 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Erro
         throw new InvalidProgramException();
     }
 
-    public override ErrorOrSuccess VisitFactor_BoolNotOperation([NotNull] ARLangParser.Factor_BoolNotOperationContext context)
+    public override InterpreterResult VisitFactor_BoolNotOperation([NotNull] ARLangParser.Factor_BoolNotOperationContext context)
     {
         var right = Visit(context.factor());
         return new Value(!right.AsSuccessWithValue.AsBoolean);
     }
 
-    public override ErrorOrSuccess VisitFactor_CallExpr([NotNull] ARLangParser.Factor_CallExprContext context)
+    public override InterpreterResult VisitFactor_CallExpr([NotNull] ARLangParser.Factor_CallExprContext context)
     {
         return Visit(context.callexpr());
     }
