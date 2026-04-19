@@ -68,7 +68,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
 
     public override InterpreterResult VisitArg([NotNull] ARLangParser.ArgContext context)
     {
-        return new KeyValuePair<string, string>(context.TYPE().GetText(), context.IDENTIFIER().GetText());
+        return new KeyValuePair<string, string>(context.IDENTIFIER().GetText(), context.TYPE().GetText());
     }
 
     public override InterpreterResult VisitIfstatement([NotNull] ARLangParser.IfstatementContext context)
@@ -155,8 +155,8 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
         var parameters = fnDef.Params.ToList();
         for (int i = 0; i < parameters.Count; i++)
         {
-            string parameterType = parameters[i].Key;
-            string parameterName = parameters[i].Value;
+            string parameterName = parameters[i].Key;
+            string parameterType = parameters[i].Value;
             Value parameterValue = visitedActualsResult.AsSuccessWithValueArray[i];
             innerScope.Declare(parameterName, parameterType);
             innerScope.Assign(parameterName, parameterValue);
@@ -194,6 +194,11 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
             return r;
         }
         return new Success();
+    }
+    
+    public override InterpreterResult VisitCallstatement([NotNull] ARLangParser.CallstatementContext context)
+    {
+        return Visit(context.callexpr());
     }
 
     public override InterpreterResult VisitStatement([NotNull] ARLangParser.StatementContext context)
