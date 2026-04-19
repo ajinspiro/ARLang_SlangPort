@@ -1,0 +1,6 @@
+FUNCTION VOID Main() 
+    PRINTLN "A";
+    RETURN;
+    PRINTLN "B";
+    RETURN;
+END
