@@ -115,7 +115,18 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
 
     public override InterpreterResult VisitReturnstatement([NotNull] ARLangParser.ReturnstatementContext context)
     {
-        return context.expr() is null ? new Success() : Visit(context.expr());
+        if (context.expr() is null)
+        {
+            ReturnResult result = new();
+            return result;
+        }
+        else
+        {
+            InterpreterResult iResult = Visit(context.expr());
+            if (!iResult.IsSuccessWithValue) return new Error();
+            ReturnResult result = new(iResult.AsSuccessWithValue);
+            return result;
+        }
     }
 
     public override InterpreterResult VisitExpr([NotNull] ARLangParser.ExprContext context)
@@ -171,13 +182,18 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
 
     public override InterpreterResult VisitStatements([NotNull] ARLangParser.StatementsContext context)
     {
-        InterpreterResult last = new Success();
         foreach (var statement in context.statement())
         {
-            last = Visit(statement);
-            if (last.IsSuccessWithValue) return last; // RETURN statement — stop executing
+            InterpreterResult result = Visit(statement);
+            if (result.IsSuccessWithValue) return result;
+            if (!result.IsReturn)
+            {
+                continue;
+            }
+            InterpreterResult r = result.AsReturn.Value is null ? new Success() : result.AsReturn.Value;
+            return r;
         }
-        return last;
+        return new Success();
     }
 
     public override InterpreterResult VisitStatement([NotNull] ARLangParser.StatementContext context)
@@ -212,7 +228,8 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
         }
         else if (context.returnstatement() is not null)
         {
-            return Visit(context.returnstatement());
+            var s = Visit(context.returnstatement());
+            return s;
         }
         else
         {
@@ -249,6 +266,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
             x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
+            x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression"
         ));
         return new Success();
@@ -266,6 +284,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
                     d => d.ToString(), s => s, b => b.ToString(), n => "<None>"
                 );
             },
+            x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
             x => "Error occured while evaluating expression",
@@ -414,6 +433,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
             error => error,
             success => new Error(),
             successWithValue => successWithValue,
+            x => new Error(),
             x => new Error(),
             x => new Error(),
             x => new Error(),

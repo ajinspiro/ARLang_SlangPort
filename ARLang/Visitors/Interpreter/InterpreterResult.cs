@@ -4,7 +4,7 @@ using OneOf.Types;
 namespace ARLang.Visitors.Interpreter;
 
 [GenerateOneOf]
-public partial class InterpreterResult : OneOfBase<Error, Success, Value, Value[], KeyValuePair<string, string>, Dictionary<string, string>, None>
+public partial class InterpreterResult : OneOfBase<Error, Success, Value, Value[], KeyValuePair<string, string>, Dictionary<string, string>, None, ReturnResult>
 {
     public bool IsError => IsT0;
     public bool IsSuccess => IsT1;
@@ -13,6 +13,7 @@ public partial class InterpreterResult : OneOfBase<Error, Success, Value, Value[
     public bool IsSuccessWithKeyValuePair => IsT4;
     public bool IsSuccessWithDictionary => IsT5;
     public bool IsNone => IsT6;
+    public bool IsReturn => IsT7;
 
 
     public Error AsError => AsT0;
@@ -22,6 +23,7 @@ public partial class InterpreterResult : OneOfBase<Error, Success, Value, Value[
     public KeyValuePair<string, string> AsSuccessWithKeyValuePair => AsT4;
     public Dictionary<string, string> AsSuccessWithDictionary => AsT5;
     public None AsNone => AsT6;
+    public ReturnResult AsReturn => AsT7;
 }
 
 [GenerateOneOf]
@@ -36,4 +38,14 @@ public partial class Value : OneOfBase<double, string, bool, None>
     public string AsString => AsT1;
     public bool AsBoolean => AsT2;
     public None AsNone => AsT3;
+}
+
+public record ReturnResult
+{
+    public ReturnResult(Value? value = null)
+    {
+        Value = value;
+    }
+
+    public Value? Value { get; }
 }
