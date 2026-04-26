@@ -1,0 +1,4 @@
+FUNCTION VOID Main() 
+    PRINTLN 1+2*3;
+    RETURN;
+END

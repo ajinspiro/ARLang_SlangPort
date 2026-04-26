@@ -1,0 +1,4 @@
+FUNCTION VOID Main()
+PRINT "Hello World";
+RETURN;
+END

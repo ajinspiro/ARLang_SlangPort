@@ -1,4 +1,4 @@
-FUNCTION NUMERIC MAIN()
+FUNCTION NUMERIC Main()
  NUMERIC newterm;
  NUMERIC prevterm;
  NUMERIC currterm;
