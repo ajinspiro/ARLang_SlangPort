@@ -1,3 +1,5 @@
+using Antlr4.Runtime;
+using ARLang.Visitors.Interpreter;
 using OneOf;
 using OneOf.Types;
 
@@ -16,27 +18,48 @@ public class VisitorManager
         this.mode = mode;
     }
 
-    public OneOf<Error, Success> Execute(string slangScriptPath)
+    public void Execute(string slangScriptPath)
     {
         if (slangScriptPath.EndsWith(".sl"))
         {
-            return ExecutePrivate(slangScriptPath);
+            ExecutePrivate(slangScriptPath);
         }
         else
         {
             foreach (var path in Directory.EnumerateFiles(slangScriptPath))
             {
-                OneOf<Error, Success> result = ExecutePrivate(path);
-                if (result.IsT0) return result.AsT0;
+                ExecutePrivate(path);
             }
-            return new Success();
         }
     }
 
-    public OneOf<Error, Success> ExecutePrivate(string slangScriptPath)
+    private static void ExecutePrivate(string slangScriptPath)
     {
+        System.Console.WriteLine($"====Executing {slangScriptPath}====");
         string scriptContent = File.ReadAllText(slangScriptPath);
-        return new Error(); // TODO
+        var module = GetModule(scriptContent);
+        Interpreter visitor = new();
+        var value = visitor.Visit(module);
+        Console.WriteLine("============RESULTS===========");
+        string valueToPrint = value.Match(
+            error => "Error",
+            success => "Success (no value)",
+            successWithValue => $"Success with value: {successWithValue.Match(d => d.ToString(), s => s, b => b.ToString(), n => "<none>")} ",
+            error => "Error",
+            error => "Error",
+            error => "Error",
+            error => "Error",
+            error => "Error"
+        );
+        Console.WriteLine(valueToPrint);
     }
 
+    private static ARLangParser.ModuleContext GetModule(string scriptContent)
+    {
+        ICharStream input = CharStreams.fromString(scriptContent);
+        ARLangLexer lexer = new(input);
+        CommonTokenStream tokens = new(lexer);
+        ARLangParser parser = new(tokens);
+        return parser.module();
+    }
 }

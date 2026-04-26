@@ -1,24 +1,9 @@
 ﻿using Antlr4.Runtime;
+using ARLang;
 using ARLang.Visitors.Compiler;
 using ARLang.Visitors.Interpreter;
 
-ICharStream input = CharStreams.fromString(await File.ReadAllTextAsync(args[0]));
-ARLangLexer lexer = new(input);
-CommonTokenStream tokens = new(lexer);
-ARLangParser parser = new(tokens);
-var module = parser.module();
-Interpreter visitor = new();
 // Compiler visitor = new("DynamicTest");
-var value = visitor.Visit(module);
-Console.WriteLine("============RESULTS===========");
-string valueToPrint = value.Match(
-    error => "Error",
-    success => "Success (no value)",
-    successWithValue => "Success with value: {successWithValue.Match(d => d.ToString(), s => s, b => b.ToString(), n => \"<none>\")}",
-    error => "Error",
-    error => "Error",
-    error => "Error",
-    error => "Error",
-    error => "Error"
-);
-Console.WriteLine(valueToPrint);
+
+VisitorManager manager = new(args[0]);
+manager.Execute(args[1]);
