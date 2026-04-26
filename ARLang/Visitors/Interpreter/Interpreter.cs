@@ -3,9 +3,9 @@ using OneOf.Types;
 
 namespace ARLang.Visitors.Interpreter;
 
-public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<InterpreterResult>
+public class Interpreter : ARLangBaseVisitor<InterpreterResult>
 {
-    private readonly RuntimeContext runtimeContext = runtimeContext;
+    private readonly RuntimeContext runtimeContext = new();
 
     public override InterpreterResult VisitModule([NotNull] ARLangParser.ModuleContext context)
     {
@@ -195,7 +195,7 @@ public class Interpreter(RuntimeContext runtimeContext) : ARLangBaseVisitor<Inte
         }
         return new Success();
     }
-    
+
     public override InterpreterResult VisitCallstatement([NotNull] ARLangParser.CallstatementContext context)
     {
         return Visit(context.callexpr());

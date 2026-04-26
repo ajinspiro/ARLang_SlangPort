@@ -6,9 +6,8 @@ ICharStream input = CharStreams.fromString(await File.ReadAllTextAsync(args[0]))
 ARLangLexer lexer = new(input);
 CommonTokenStream tokens = new(lexer);
 ARLangParser parser = new(tokens);
-RuntimeContext runtimeContext = new();
 var module = parser.module();
-Interpreter visitor = new(runtimeContext);
+Interpreter visitor = new();
 // Compiler visitor = new("DynamicTest");
 var value = visitor.Visit(module);
 Console.WriteLine("============RESULTS===========");
