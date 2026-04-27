@@ -1,4 +1,5 @@
 FUNCTION VOID Main() 
     PRINTLN 1+2*3;
+    PRINTLN 2*(5+(3-4+5));
     RETURN;
 END
