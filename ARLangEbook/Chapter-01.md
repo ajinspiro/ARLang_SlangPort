@@ -1,0 +1,1 @@
+Thanks to the availability of information and better tools writing a compiler has become  an easy excersise in software engineering.  Simple Compilers and Domain Specific Languages are not difficult programs to write. A compilation or interpretation process has multiple stages and we will learn them in sequence. 
