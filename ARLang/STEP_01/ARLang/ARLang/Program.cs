@@ -26,7 +26,31 @@ ARLangExpressionBase expression3 = new UnaryMinusExpression(
     )
 );
 
-EvaluateExpression(expression1, expression2, expression3);
+// Testing unary plus. Result must be -90
+ARLangExpressionBase expression4 = new UnaryPlusExpression(expression3);
+
+// Testing unary minus. Result must be 90
+ARLangExpressionBase expression5 = new UnaryMinusExpression(expression3);
+
+// Testing double application of unary minus. Result must be -90
+ARLangExpressionBase expression6 = new UnaryMinusExpression(expression5);
+
+// Testing division by zero
+ARLangExpressionBase expression7 = new DivisionExpression(
+    new NumericConstantExpression(1),
+    new NumericConstantExpression(0)
+);
+
+// Testing division by zero
+ARLangExpressionBase expression8 = new AdditionExpression(
+    new DivisionExpression(
+        new NumericConstantExpression(1),
+        new NumericConstantExpression(0)
+    ),
+    new NumericConstantExpression(1)
+);
+
+EvaluateExpression(expression1, expression2, expression3, expression4, expression5, expression6, expression7, expression8);
 
 static void EvaluateExpression(params ARLangExpressionBase[] expressions)
 {
