@@ -7,3 +7,5 @@ The interpreter is not very useful because evaluating an expression of user's ch
 To solve this problem we need to accept expressions in string form like "1+2" or "-(1+2*3)" and evaluate them. For this we need to introduce a lexical analyzer.
 
 TODO: Explain lexical analysis
+
+The lexer we will build in this step will be a very minimal one simplified for expression evaluation only. We will exand this lexer in later steps. In this step we are focusing on lexing only. Construction of syntax tree from lexed token array is done in next chapter.
