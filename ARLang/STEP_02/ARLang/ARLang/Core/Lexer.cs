@@ -12,7 +12,19 @@ public class Lexer
         this.expressionString = expressionString;
     }
 
-    public SymbolInfo GetToken()
+    public List<SymbolInfo> Tokenize()
+    {
+        List<SymbolInfo> symbols = [];
+        SymbolInfo temp;
+        do
+        {
+            temp = GetToken();
+            symbols.Add(temp);
+        } while (temp.TokenType != TokenType.END_OF_STRING);
+        return symbols;
+    }
+
+    private SymbolInfo GetToken()
     {
         // Skip white spaces
         while (index < expressionString.Length && (expressionString[index] == ' ' || expressionString[index] == '\t'))
