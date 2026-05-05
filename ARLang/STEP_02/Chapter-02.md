@@ -1,4 +1,4 @@
-# Chapter 2 - Input Analysis (Adding lexer)
+# Chapter 2 - Input Analysis (Adding lexer and parser)
 
 We hard coded the syntax tree in step 1 for learning how to make a syntax tree. Now that we have done that lets understand the implications of this. 
 
