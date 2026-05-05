@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using OneOf.Types;
 
 namespace ARLang.Core;
@@ -12,7 +13,7 @@ public class Lexer
         this.expressionString = expressionString;
     }
 
-    public List<SymbolInfo> Tokenize()
+    public ImmutableList<SymbolInfo> Tokenize()
     {
         List<SymbolInfo> symbols = [];
         SymbolInfo temp;
@@ -21,7 +22,7 @@ public class Lexer
             temp = GetToken();
             symbols.Add(temp);
         } while (temp.TokenType != TokenType.END_OF_STRING);
-        return symbols;
+        return symbols.ToImmutableList();
     }
 
     private SymbolInfo GetToken()
