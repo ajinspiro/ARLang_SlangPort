@@ -3,9 +3,10 @@ using ARLang.SyntaxTree;
 namespace ARLang.Core;
 /* 
     EBNF of expression evaluator
-    <Expr> ::= <Term> | Term { + | - } <Expr>
-    <Term> ::= <Factor> | <Factor> {*|/} <Term>
-    <Factor>::= <number> | ( <expr> ) | {+|-} <factor>
+
+    Expr   ::= Term { ("+" | "-") Term }
+    Term   ::= Factor { ("*" | "/") Factor }
+    Factor ::= Number | "(" Expr ")" | ("+" | "-") Factor
   */
 public class Parser(IList<SymbolInfo> tokens)
 {
@@ -14,33 +15,35 @@ public class Parser(IList<SymbolInfo> tokens)
 
     public ARLangExpressionBase Parse()
     {
-        return ParseExpression();
+        var result = ParseExpression();
+        index = 0; // reset parser instance
+        return result;
     }
 
     private ARLangExpressionBase ParseExpression()
     {
-        ARLangExpressionBase returnValue = ParseTerm();
+        ARLangExpressionBase leftExp = ParseTerm();
         while (tokens[index].TokenType == TokenType.PLUS || tokens[index].TokenType == TokenType.MINUS)
         {
             SymbolInfo operatorBackup = tokens[index];
             index++;
-            ARLangExpressionBase expression = ParseExpression();
-            returnValue = operatorBackup.TokenType == TokenType.PLUS ? new AdditionExpression(returnValue, expression) : new SubtractionExpression(returnValue, expression);
+            ARLangExpressionBase rightExp = ParseTerm();
+            leftExp = operatorBackup.TokenType == TokenType.PLUS ? new AdditionExpression(leftExp, rightExp) : new SubtractionExpression(leftExp, rightExp);
         }
-        return returnValue;
+        return leftExp;
     }
 
     private ARLangExpressionBase ParseTerm()
     {
-        ARLangExpressionBase returnValue = ParseFactor();
+        ARLangExpressionBase leftExp = ParseFactor();
         while (tokens[index].TokenType == TokenType.STAR || tokens[index].TokenType == TokenType.SLASH)
         {
             SymbolInfo operatorBackup = tokens[index];
             index++;
-            ARLangExpressionBase term = ParseTerm();
-            returnValue = operatorBackup.TokenType == TokenType.STAR ? new MultiplicationExpression(returnValue, term) : new DivisionExpression(returnValue, term);
+            ARLangExpressionBase rightExp = ParseFactor();
+            leftExp = operatorBackup.TokenType == TokenType.STAR ? new MultiplicationExpression(leftExp, rightExp) : new DivisionExpression(leftExp, rightExp);
         }
-        return returnValue;
+        return leftExp;
     }
 
     private ARLangExpressionBase ParseFactor()
