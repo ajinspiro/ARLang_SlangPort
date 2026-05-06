@@ -13,7 +13,7 @@ The crux of the SLANG4.net can be summed up in two sentences.
     statement      ::= printstmt | printlinestmt
 
     printstmt      ::= "print" expr ";"
-    printlinestmt  ::= "printline" expr ";"
+    printlinestmt  ::= "println" expr ";"
 
     expr           ::= term { ("+" | "-") term }
 
