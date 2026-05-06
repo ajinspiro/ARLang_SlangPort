@@ -1,4 +1,5 @@
 ﻿using ARLang.Core;
+using ARLang.SyntaxTree;
 using ARLang.Visitors.Interpreter;
 
 // 1+2
@@ -7,7 +8,7 @@ using ARLang.Visitors.Interpreter;
 // 2*(5+(3-4+5)) = 18 (not -2)
 // 3-4+5 = 4 (not -6)
 
-TestLexer("3-4+5", "2*(5+((3-4)+5))", "2*(5+(3-4+5))", "-(10)", "1+2", "5*10", "-(10 + (30+50))");
+TestLexer("PRINTLN 3-4+5; \r\n PRINT 2*(5+((3-4)+5)); \r\n PRINTLN 2*(5+(3-4+5)); \r\n PRINT -(10); PRINTLN 1+2; \r\n PRINT 5*10; \r\n PRINTLN -(10 + (30+50));");
 
 static void TestLexer(params string[] expressionStrings)
 {
@@ -22,9 +23,7 @@ static void TestLexer(params string[] expressionStrings)
             Console.WriteLine(item);
         }
         Parser parser = new(tokens);
-        var syntaxTree = parser.Parse();
-        var result = interpreter.Visit(syntaxTree);
-        Console.WriteLine($"Result : {result}");
-        Console.WriteLine();
+        List<ARLangStatementBase> syntaxTrees = parser.Parse();
+        interpreter.Visit(syntaxTrees);
     }
 }

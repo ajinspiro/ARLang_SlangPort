@@ -11,6 +11,11 @@ public enum TokenType
     OPEN_PARENTHESIS,       // '('
     CLOSE_PARENTHESIS,      // ')'
     NUMBER,
-    END_OF_STRING
-    // Step 2 End
+    END_OF_STRING,
+
+    // Step 3 Start
+    PRINT,                  // Print statement
+    PRINTLN,                // PrintLine statement
+    UNQUOTED_STRING,        // Identifiers (Variable name, Function name etc)
+    SEMICOLON
 }

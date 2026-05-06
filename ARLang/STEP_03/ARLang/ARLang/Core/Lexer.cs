@@ -7,7 +7,13 @@ public class Lexer
 {
     private readonly string expressionString;
     private int index = 0;
+    private readonly List<KeywordEntry> keywords = [
+      new (TokenType.PRINT, "PRINT"),
+      new (TokenType.PRINTLN, "PRINTLN")
+    ];
+
     public double Number { get; private set; }
+
     public Lexer(string expressionString)
     {
         this.expressionString = expressionString;
@@ -28,7 +34,7 @@ public class Lexer
     private SymbolInfo GetToken()
     {
         // Skip white spaces
-        while (index < expressionString.Length && (expressionString[index] == ' ' || expressionString[index] == '\t'))
+        while (index < expressionString.Length && (expressionString[index] == ' ' || expressionString[index] == '\t' || expressionString[index] == '\r' || expressionString[index] == '\n'))
         {
             index++;
         }
@@ -66,6 +72,10 @@ public class Lexer
                 tok = TokenType.CLOSE_PARENTHESIS;
                 index++;
                 break;
+            case ';':
+                tok = TokenType.SEMICOLON;
+                index++;
+                break;
             case '0':
             case '1':
             case '2':
@@ -98,8 +108,28 @@ public class Lexer
                 }
                 break;
             default:
-                tok = TokenType.ILLEGAL_TOKEN;
-                break;
+                {
+                    if (char.IsLetter(expressionString[index]))
+                    {
+                        string temp = Convert.ToString(expressionString[index]);
+                        index++;
+                        while (index < expressionString.Length && (char.IsLetterOrDigit(expressionString[index]) || expressionString[index] == '_'))
+                        {
+                            temp += expressionString[index];
+                            index++;
+                        }
+
+                        temp = temp.ToUpperInvariant();
+
+                        tok = keywords.First(x => temp == x.Value).Token;
+                        break;
+                    }
+                    else
+                    {
+                        tok = TokenType.ILLEGAL_TOKEN;
+                        break;
+                    }
+                }
         }
         return new SymbolInfo(tok, tok == TokenType.NUMBER ? Number : new None());
     }

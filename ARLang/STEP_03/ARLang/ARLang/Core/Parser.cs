@@ -13,11 +13,62 @@ public class Parser(IList<SymbolInfo> tokens)
     private readonly IList<SymbolInfo> tokens = tokens;
     private int index = 0;
 
-    public ARLangExpressionBase Parse()
+    public List<ARLangStatementBase> Parse()
     {
-        var result = ParseExpression();
+        var result = ParseStatementList();
         index = 0; // reset parser instance
         return result;
+    }
+
+    private List<ARLangStatementBase> ParseStatementList()
+    {
+        List<ARLangStatementBase> statements = [];
+        while (tokens[index].TokenType != TokenType.END_OF_STRING)
+        {
+            var statement = ParseStatement();
+            if (statement is ErrorStatement)
+            {
+                Console.Error.WriteLine("Error: Illegal token/statement encountered.");
+                return [];
+            }
+            statements.Add(statement);
+        }
+        return statements;
+    }
+
+    private ARLangStatementBase ParseStatement()
+    {
+        return tokens[index] switch
+        {
+            { TokenType: TokenType.PRINTLN } => ParsePrintLineStatement(),
+            { TokenType: TokenType.PRINT } => ParsePrintStatement(),
+            { TokenType: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
+            _ => throw new Exception()
+        };
+    }
+
+    private ARLangStatementBase ParsePrintStatement()
+    {
+        index++;
+        ARLangExpressionBase expression = ParseExpression();
+        if (tokens[index].TokenType != TokenType.SEMICOLON)
+        {
+            return new ErrorStatement("Semicolon missing.");
+        }
+        index++;
+        return new PrintStatement(expression);
+    }
+
+    private ARLangStatementBase ParsePrintLineStatement()
+    {
+        index++;
+        ARLangExpressionBase expression = ParseExpression();
+        if (tokens[index].TokenType != TokenType.SEMICOLON)
+        {
+            return new ErrorStatement("Semicolon missing.");
+        }
+        index++;
+        return new PrintLineStatement(expression);
     }
 
     private ARLangExpressionBase ParseExpression()

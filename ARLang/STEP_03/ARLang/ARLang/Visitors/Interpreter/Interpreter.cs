@@ -4,7 +4,61 @@ namespace ARLang.Visitors.Interpreter;
 
 public class Interpreter : IVisitorBase
 {
-    public ARLangExpressionBase Visit(ARLangExpressionBase expression)
+    public void Visit(List<ARLangStatementBase> statements)
+    {
+        foreach (var statement in statements)
+        {
+            VisitStatement(statement);
+        }
+    }
+    
+    private void VisitStatement(ARLangStatementBase statement)
+    {
+        if (statement is PrintLineStatement printlineStatement)
+        {
+            VisitPrintLineStatement(printlineStatement);
+        }
+        else if (statement is PrintStatement printStatement)
+        {
+            VisitPrintStatement(printStatement);
+        }
+    }
+
+    private void VisitPrintLineStatement(PrintLineStatement printlineStatement)
+    {
+        ARLangExpressionBase exp = VisitExpression(printlineStatement.Expression);
+        if (exp is NumericConstantExpression num)
+        {
+            Console.WriteLine(num.Value);
+        }
+        else if (exp is ErrorExpression error)
+        {
+            Console.Error.WriteLine(error.Msg);
+        }
+        else
+        {
+            Console.Error.WriteLine("Invalid type of expression received in printline statement");
+        }
+    }
+
+    private void VisitPrintStatement(PrintStatement printStatement)
+    {
+        ARLangExpressionBase exp = VisitExpression(printStatement.Expression);
+        if (exp is NumericConstantExpression num)
+        {
+            Console.Write(num.Value);
+        }
+        else if (exp is ErrorExpression error)
+        {
+            Console.Error.WriteLine(error.Msg);
+        }
+        else
+        {
+            Console.Error.WriteLine("Invalid type of expression received in printline statement");
+        }
+    }
+
+    private ARLangExpressionBase VisitExpression(ARLangExpressionBase expression)
     {
         return expression switch
         {
@@ -21,8 +75,8 @@ public class Interpreter : IVisitorBase
 
     private ARLangExpressionBase VisitAddition(AdditionExpression exp)
     {
-        var value1 = Visit(exp.Expression1) as NumericConstantExpression;
-        var value2 = Visit(exp.Expression2) as NumericConstantExpression;
+        var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
+        var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
         if (value1 is null)
         {
             return new ErrorExpression("Expression 1 failed to evaluate.");
@@ -36,8 +90,8 @@ public class Interpreter : IVisitorBase
 
     private ARLangExpressionBase VisitSubtraction(SubtractionExpression exp)
     {
-        var value1 = Visit(exp.Expression1) as NumericConstantExpression;
-        var value2 = Visit(exp.Expression2) as NumericConstantExpression;
+        var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
+        var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
         if (value1 is null)
         {
             return new ErrorExpression("Expression 1 failed to evaluate.");
@@ -51,8 +105,8 @@ public class Interpreter : IVisitorBase
 
     private ARLangExpressionBase VisitMultiplication(MultiplicationExpression exp)
     {
-        var value1 = Visit(exp.Expression1) as NumericConstantExpression;
-        var value2 = Visit(exp.Expression2) as NumericConstantExpression;
+        var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
+        var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
         if (value1 is null)
         {
             return new ErrorExpression("Expression 1 failed to evaluate.");
@@ -66,8 +120,8 @@ public class Interpreter : IVisitorBase
 
     private ARLangExpressionBase VisitDivision(DivisionExpression exp)
     {
-        var value1 = Visit(exp.Expression1) as NumericConstantExpression;
-        var value2 = Visit(exp.Expression2) as NumericConstantExpression;
+        var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
+        var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
         if (value1 is null)
         {
             return new ErrorExpression("Expression 1 failed to evaluate.");
@@ -85,7 +139,7 @@ public class Interpreter : IVisitorBase
 
     private ARLangExpressionBase VisitUnaryPlus(UnaryPlusExpression exp)
     {
-        var value = Visit(exp.Expression) as NumericConstantExpression;
+        var value = VisitExpression(exp.Expression) as NumericConstantExpression;
         if (value is null)
         {
             return new ErrorExpression("Expression failed to evaluate.");
@@ -95,7 +149,7 @@ public class Interpreter : IVisitorBase
 
     private ARLangExpressionBase VisitUnaryMinus(UnaryMinusExpression exp)
     {
-        var value = Visit(exp.Expression) as NumericConstantExpression;
+        var value = VisitExpression(exp.Expression) as NumericConstantExpression;
         if (value is null)
         {
             return new ErrorExpression("Expression failed to evaluate.");
