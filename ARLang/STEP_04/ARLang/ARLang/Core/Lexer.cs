@@ -9,10 +9,13 @@ public class Lexer
     private int index = 0;
     private readonly List<KeywordEntry> keywords = [
       new (TokenType.PRINT, "PRINT"),
-      new (TokenType.PRINTLN, "PRINTLN")
+      new (TokenType.PRINTLN, "PRINTLINE"),
+      new (TokenType.VARIABLE_NUMBER, "NUMERIC"),
+      new (TokenType.VARIABLE_STRING, "STRING"),
+      new (TokenType.VARIABLE_BOOL, "BOOLEAN"),
+      new (TokenType.BOOL_TRUE, "TRUE"),
+      new (TokenType.BOOL_FALSE, "FALSE"),
     ];
-
-    public double Number { get; private set; }
 
     public Lexer(string expressionString)
     {
@@ -33,6 +36,8 @@ public class Lexer
 
     private SymbolInfo GetToken()
     {
+        double valueOfTokenizedNumber = 0;
+        string valueOfTokenizedString = string.Empty;
         // Skip white spaces
         while (index < expressionString.Length && (expressionString[index] == ' ' || expressionString[index] == '\t' || expressionString[index] == '\r' || expressionString[index] == '\n'))
         {
@@ -76,6 +81,10 @@ public class Lexer
                 tok = TokenType.SEMICOLON;
                 index++;
                 break;
+            case '=':
+                tok = TokenType.ASSIGN;
+                index++;
+                break;
             case '0':
             case '1':
             case '2':
@@ -103,10 +112,52 @@ public class Lexer
                         str += Convert.ToString(expressionString[index]);
                         index++;
                     }
-                    Number = Convert.ToDouble(str);
+                    if (expressionString[index] == '.')
+                    {
+                        str += '.';
+                        index++;
+                        while (index < expressionString.Length &&
+                       (expressionString[index] == '0' ||
+                       expressionString[index] == '1' ||
+                       expressionString[index] == '2' ||
+                       expressionString[index] == '3' ||
+                       expressionString[index] == '4' ||
+                       expressionString[index] == '5' ||
+                       expressionString[index] == '6' ||
+                       expressionString[index] == '7' ||
+                       expressionString[index] == '8' ||
+                       expressionString[index] == '9'))
+                        {
+                            str += Convert.ToString(expressionString[index]);
+                            index++;
+                        }
+                    }
+                    valueOfTokenizedNumber = Convert.ToDouble(str);
                     tok = TokenType.NUMBER;
                 }
                 break;
+            case '"':
+                {
+                    string x = string.Empty;
+                    index++;
+                    while (index < expressionString.Length && expressionString[index] != '"')
+                    {
+                        x = x + expressionString[index];
+                        index++;
+                    }
+
+                    if (index == expressionString.Length)
+                    {
+                        tok = TokenType.ILLEGAL_TOKEN;
+                    }
+                    else
+                    {
+                        index++;
+                        valueOfTokenizedString = x;
+                        tok = TokenType.STRING;
+                    }
+                    break;
+                }
             default:
                 {
                     if (char.IsLetter(expressionString[index]))
@@ -119,9 +170,18 @@ public class Lexer
                             index++;
                         }
 
-                        temp = temp.ToUpperInvariant();
-
-                        tok = keywords.First(x => temp == x.Value).Token;
+                        KeywordEntry? matchedKeyword = keywords.FirstOrDefault(x => temp.ToUpperInvariant() == x.Value);
+                        if (matchedKeyword is null)
+                        {
+                            // Match is an unquoted string, like the name of a variable.
+                            tok = TokenType.UNQUOTED_STRING;
+                            valueOfTokenizedString = temp;
+                        }
+                        else
+                        {
+                            // Keyword matched. 
+                            tok = matchedKeyword.Token;
+                        }
                         break;
                     }
                     else
@@ -131,6 +191,14 @@ public class Lexer
                     }
                 }
         }
-        return new SymbolInfo(tok, tok == TokenType.NUMBER ? Number : new None());
+        ARLangValue value = tok switch
+        {
+            TokenType.NUMBER => valueOfTokenizedNumber,
+            TokenType.STRING => valueOfTokenizedString,
+            TokenType.UNQUOTED_STRING => valueOfTokenizedString,
+            _ => new None(),
+            // Each boolean value (true and false) has dedicated token type. So, the parser can identify the value directly from token type.
+        };
+        return new SymbolInfo(tok, value);
     }
 }

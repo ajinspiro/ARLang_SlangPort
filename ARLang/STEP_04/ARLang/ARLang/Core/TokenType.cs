@@ -14,8 +14,8 @@ public enum TokenType
     END_OF_STRING,
 
     // Step 3 Start
-    PRINT,                  // Print statement
-    PRINTLN,                // PrintLine statement
+    PRINT,                  // Print statement. Commented out in step 4. We will be using UNQUOTED_STRING
+    PRINTLN,                // PrintLine statement. Commented out in step 4. We will be using UNQUOTED_STRING
     UNQUOTED_STRING,        // Identifiers (Variable name, Function name etc)
     SEMICOLON,
 

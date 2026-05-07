@@ -28,4 +28,6 @@ The language supports only three data types viz
 We will add BooleanConstantExpression node and StringLiteralExpression in this step. We will also introduce RuntimeContext class and CompilationContext class.  We will add type checking and Variable support. Also we will add SymbolName to SymbolInfo. We will also introduce type checking in this step so that we will error out properly when user tries to evaluate invalid operands together like 
 10 + true
 
-Lexer and parser needs to be modified to support the new data types.
+Lexer and parser needs to be modified to support the new data types. 
+Inside lexer, we will also support decimal part for numeric constants.
+Also the lexer will support variable names using unquoted string type.
