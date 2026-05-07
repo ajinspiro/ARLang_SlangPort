@@ -25,3 +25,5 @@ The language supports only three data types viz
                      | "(" expr ")"
                      | ("+" | "-") factor
 ---
+We will add BooleanConstantExpression node and StringLiteralExpression in this step. We will also introduce RuntimeContext class and CompilationContext class.  We will add type checking and Variable support. Also we will add SymbolName to SymbolInfo. We will also introduce type checking in this step so that we will error out properly when user tries to evaluate invalid operands together like 
+10 + true

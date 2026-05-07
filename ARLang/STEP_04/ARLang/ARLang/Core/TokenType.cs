@@ -17,5 +17,15 @@ public enum TokenType
     PRINT,                  // Print statement
     PRINTLN,                // PrintLine statement
     UNQUOTED_STRING,        // Identifiers (Variable name, Function name etc)
-    SEMICOLON
+    SEMICOLON,
+
+    // Step 4 Start
+    VARIABLE_NUMBER,        // Variable names that store numeric value
+    VARIABLE_STRING,        // Variable names that store string value 
+    VARIABLE_BOOL,          // Variable names that store boolean value
+    COMMENT,                // Comment Token ( presently not used )   
+    BOOL_TRUE,              // Boolean TRUE
+    BOOL_FALSE,             // Boolean FALSE
+    STRING,                 // String Literal
+    ASSIGN                  // Assignment Symbol =  
 }
