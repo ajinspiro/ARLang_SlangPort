@@ -10,26 +10,35 @@ public class TypeChecker : IVisitorBase
     {
         foreach (var statement in statements)
         {
-            VisitStatement(statement);
+            var result = VisitStatement(statement);
+            if (result.IsError)
+            {
+                throw new Exception(result.AsError.Value);
+            }
         }
     }
-    private void VisitStatement(ARLangStatementBase statement)
+    private TypeCheckResult VisitStatement(ARLangStatementBase statement)
     {
         if (statement is PrintLineStatement printlineStatement)
         {
-            VisitPrintLineStatement(printlineStatement);
+            return VisitPrintLineStatement(printlineStatement);
         }
         else if (statement is PrintStatement printStatement)
         {
-            VisitPrintStatement(printStatement);
+            return VisitPrintStatement(printStatement);
+        }
+        else
+        {
+            return new Error<string>("Invalid statement.");
         }
     }
-    private void VisitPrintLineStatement(PrintLineStatement printlineStatement)
+    private TypeCheckResult VisitPrintLineStatement(PrintLineStatement printlineStatement)
     {
-
+        return VisitExpression(printlineStatement.Expression);
     }
-    private void VisitPrintStatement(PrintStatement printStatement)
+    private TypeCheckResult VisitPrintStatement(PrintStatement printStatement)
     {
+        return VisitExpression(printStatement.Expression);
     }
     private TypeCheckResult VisitExpression(ARLangExpressionBase expression)
     {
@@ -45,16 +54,14 @@ public class TypeChecker : IVisitorBase
             _ => new Error<string>("Invalid expression")
         };
     }
-
     private TypeCheckResult VisitUnaryPlus(UnaryPlusExpression e)
     {
-        var result = VisitExpression(e);
+        var result = VisitExpression(e.Expression);
         return VisitUnaryCommon(result);
     }
-
     private TypeCheckResult VisitUnaryMinus(UnaryMinusExpression e)
     {
-        var result = VisitExpression(e);
+        var result = VisitExpression(e.Expression);
         return VisitUnaryCommon(result);
     }
     private static TypeCheckResult VisitUnaryCommon(TypeCheckResult result)
@@ -71,6 +78,24 @@ public class TypeChecker : IVisitorBase
         );
     }
     private TypeCheckResult VisitDivision(DivisionExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return VisitBinaryCommon(result1, result2);
+    }
+    private TypeCheckResult VisitMultiplication(MultiplicationExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return VisitBinaryCommon(result1, result2);
+    }
+    private TypeCheckResult VisitSubtraction(SubtractionExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return VisitBinaryCommon(result1, result2);
+    }
+    private TypeCheckResult VisitAddition(AdditionExpression e)
     {
         var result1 = VisitExpression(e.Expression1);
         var result2 = VisitExpression(e.Expression2);
@@ -112,23 +137,5 @@ public class TypeChecker : IVisitorBase
             return SupportedTypes.Numeric;
         }
         return new Error<string>("Something went wrong");
-    }
-    private TypeCheckResult VisitMultiplication(MultiplicationExpression e)
-    {
-        var result1 = VisitExpression(e.Expression1);
-        var result2 = VisitExpression(e.Expression2);
-        return VisitBinaryCommon(result1, result2);
-    }
-    private TypeCheckResult VisitSubtraction(SubtractionExpression e)
-    {
-        var result1 = VisitExpression(e.Expression1);
-        var result2 = VisitExpression(e.Expression2);
-        return VisitBinaryCommon(result1, result2);
-    }
-    private TypeCheckResult VisitAddition(AdditionExpression e)
-    {
-        var result1 = VisitExpression(e.Expression1);
-        var result2 = VisitExpression(e.Expression2);
-        return VisitBinaryCommon(result1, result2);
     }
 }

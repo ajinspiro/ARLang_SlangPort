@@ -104,7 +104,9 @@ public class Parser(IList<SymbolInfo> tokens)
             // Extracting number from union
             return tokens[index++].Value.Match<ARLangExpressionBase>(
                 error => new ErrorExpression("Parsing error: Expecting a number, but got <None>."),
-                number => new NumericConstantExpression(number)
+                number => new NumericConstantExpression(number),
+                stringVal => new ErrorExpression($"Parsing error: Expecting a number, but got string <{stringVal}>."),
+                boolVal => new ErrorExpression($"Parsing error: Expecting a number, but got bool <{boolVal}>.")
             );
         }
         if (tokens[index].TokenType == TokenType.OPEN_PARENTHESIS)

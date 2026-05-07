@@ -1,6 +1,7 @@
 ﻿using ARLang.Core;
 using ARLang.SyntaxTree;
 using ARLang.Visitors.Interpreter;
+using ARLang.Visitors.TypeChecker;
 
 // 1+2
 // 5*10
@@ -22,8 +23,10 @@ static void TestLexer(params string[] expressionStrings)
         {
             Console.WriteLine(item);
         }
+        TypeChecker typeChecker = new();
         Parser parser = new(tokens);
         List<ARLangStatementBase> syntaxTrees = parser.Parse();
+        typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
         interpreter.Visit(syntaxTrees);
     }
 }
