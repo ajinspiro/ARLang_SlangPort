@@ -195,10 +195,10 @@ public class Lexer
         {
             TokenType.NUMBER => valueOfTokenizedNumber,
             TokenType.STRING => valueOfTokenizedString,
-            TokenType.UNQUOTED_STRING => valueOfTokenizedString,
+            //TokenType.UNQUOTED_STRING => valueOfTokenizedString,
             _ => new None(),
             // Each boolean value (true and false) has dedicated token type. So, the parser can identify the value directly from token type.
         };
-        return new SymbolInfo(tok, value);
+        return new SymbolInfo(tok, value, SymbolName: tok == TokenType.UNQUOTED_STRING ? valueOfTokenizedString : null);
     }
 }

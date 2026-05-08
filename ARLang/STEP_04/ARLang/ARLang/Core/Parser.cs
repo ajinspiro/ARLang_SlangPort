@@ -1,4 +1,5 @@
 using ARLang.SyntaxTree;
+using OneOf.Types;
 
 namespace ARLang.Core;
 /* 
@@ -12,7 +13,7 @@ public class Parser(IList<SymbolInfo> tokens)
 {
     private readonly IList<SymbolInfo> tokens = tokens;
     private int index = 0;
-
+    private readonly RuntimeContext context = new();
     public List<ARLangStatementBase> Parse()
     {
         var result = ParseStatementList();
@@ -42,9 +43,65 @@ public class Parser(IList<SymbolInfo> tokens)
         {
             { TokenType: TokenType.PRINTLN } => ParsePrintLineStatement(),
             { TokenType: TokenType.PRINT } => ParsePrintStatement(),
+            { TokenType: TokenType.VARIABLE_STRING or TokenType.VARIABLE_NUMBER or TokenType.VARIABLE_BOOL } => ParseVariableDeclareStatement(),
+            { TokenType: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
             { TokenType: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
             _ => throw new Exception()
         };
+    }
+
+    private ARLangStatementBase ParseAssignmentStatement()
+    {
+        SymbolInfo variableName = tokens[index];
+        if (variableName.SymbolName is null)
+        {
+            return new ErrorStatement("Symbol name was null.");
+        }
+        var union = context.SymbolInfoTable.Get(variableName.SymbolName);
+        if (union.IsT0)
+        {
+            return new ErrorStatement("Undeclared variable was used.");
+        }
+        index++; // move to = operator
+        if (tokens[index].TokenType != TokenType.ASSIGN)
+        {
+            return new ErrorStatement("Assignment operator expected.");
+        }
+        index++; // move to the expression
+        var expression = ParseExpression();
+        if (tokens[index++].TokenType != TokenType.SEMICOLON)
+        {
+            return new ErrorStatement("Semicolon missing.");
+        }
+        return new AssignmentStatement(union.AsT1, expression);
+    }
+
+    private ARLangStatementBase ParseVariableDeclareStatement()
+    {
+        SymbolInfo variableType = tokens[index];
+        index++;
+        if (tokens[index].TokenType != TokenType.UNQUOTED_STRING)
+        {
+            return new ErrorStatement("Syntax error: datatype must be followed by a variable name.");
+        }
+        SymbolInfo variableName = tokens[index];
+        index++;
+        if (tokens[index].TokenType != TokenType.SEMICOLON)
+        {
+            return new ErrorStatement($"Semicolon expexted after a statement.");
+        }
+        // Adding variable to symbol table
+        SymbolInfo symbolInfo = new(variableType.TokenType, new None(), variableName.SymbolName);
+        bool isSuccess = context.SymbolInfoTable.TryAdd(symbolInfo);
+        if (isSuccess == false)
+        {
+            return new ErrorStatement($"Failed to store the variable '{variableName.SymbolName}' in symbol table.");
+        }
+        if (tokens[index++].TokenType != TokenType.SEMICOLON)
+        {
+            return new ErrorStatement("Semicolon missing.");
+        }
+        return new VariableDeclareStatement(symbolInfo);
     }
 
     private ARLangStatementBase ParsePrintStatement()
@@ -102,12 +159,18 @@ public class Parser(IList<SymbolInfo> tokens)
         if (tokens[index].TokenType == TokenType.NUMBER)
         {
             // Extracting number from union
-            return tokens[index++].Value.Match<ARLangExpressionBase>(
-                error => new ErrorExpression("Parsing error: Expecting a number, but got <None>."),
-                number => new NumericConstantExpression(number),
-                stringVal => new ErrorExpression($"Parsing error: Expecting a number, but got string <{stringVal}>."),
-                boolVal => new ErrorExpression($"Parsing error: Expecting a number, but got bool <{boolVal}>.")
-            );
+            // Value will be Number. So lets use AsT1 property directly. Its safe.
+            return new NumericConstantExpression(tokens[index++].Value.AsT1);
+        }
+        if (tokens[index].TokenType == TokenType.STRING)
+        {
+            // Extracting number from union
+            // Value will be Number. So lets use AsT2 property directly. Its safe.
+            return new StringLiteralExpression(tokens[index++].Value.AsT2);
+        }
+        if (tokens[index].TokenType == TokenType.BOOL_TRUE || tokens[index].TokenType == TokenType.BOOL_FALSE)
+        {
+            return new BooleanConstantExpression(tokens[index++].TokenType == TokenType.BOOL_TRUE ? true : false);
         }
         if (tokens[index].TokenType == TokenType.OPEN_PARENTHESIS)
         {
@@ -134,6 +197,14 @@ public class Parser(IList<SymbolInfo> tokens)
             // Unary minus expression
             ARLangExpressionBase factor = ParseFactor();
             return new UnaryMinusExpression(factor);
+        }
+        if (tokens[index].TokenType == TokenType.UNQUOTED_STRING)
+        {
+            var union = context.SymbolInfoTable.Get(tokens[index++].SymbolName!); //Supressing null because lexer will set symbol name for unquoted strings. Its safe.
+            return union.Match<ARLangExpressionBase>(
+                none => new ErrorExpression("Variable not found"),
+                symbolInfo => new VariableExpression(symbolInfo)
+                );
         }
         return new ErrorExpression("Illegal token");
     }

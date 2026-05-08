@@ -9,8 +9,8 @@ using ARLang.Visitors.TypeChecker;
 // 2*(5+(3-4+5)) = 18 (not -2)
 // 3-4+5 = 4 (not -6)
 
-// TestLexer("PRINTLN 3-4+5; \r\n PRINT 2*(5+((3-4)+5)); \r\n PRINTLN 2*(5+(3-4+5)); \r\n PRINT -(10); PRINTLN 1+2; \r\n PRINT 5*10; \r\n PRINTLN -(10 + (30+50));");
-
+// TestLexer("PRINTLINE 3-4+5; \r\n PRINT 2*(5+((3-4)+5)); \r\n PRINTLINE 2*(5+(3-4+5)); \r\n PRINT -(10); PRINTLINE 1+2; \r\n PRINT 5*10; \r\n PRINTLINE -(10 + (30+50));");
+// TestLexer("PRINTLINE TRUE;");
 TestLexer(
 @"
 NUMERIC a;  
@@ -34,7 +34,7 @@ c = ""Hello "";
 
 
 
-C = C + ""World"";
+c = c + ""World"";
 
 PRINTLINE c;
 
@@ -51,6 +51,8 @@ PRINTLINE d;
 "
 );
 
+
+static void TestLexerStub(params string[] expressionStrings) { }
 static void TestLexer(params string[] expressionStrings)
 {
     Interpreter interpreter = new();
@@ -59,14 +61,14 @@ static void TestLexer(params string[] expressionStrings)
         Console.WriteLine($"Performing lexical analysis on {expressionString}");
         Lexer lexer = new(expressionString);
         var tokens = lexer.Tokenize();
-        foreach (var item in tokens)
-        {
-            Console.WriteLine(item);
-        }
+        // foreach (var item in tokens)
+        // {
+        //     Console.WriteLine(item);
+        // }
         // TypeChecker typeChecker = new();
-        // Parser parser = new(tokens);
-        // List<ARLangStatementBase> syntaxTrees = parser.Parse();
+        Parser parser = new(tokens);
+        List<ARLangStatementBase> syntaxTrees = parser.Parse();
         // typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
-        // interpreter.Visit(syntaxTrees);
+        interpreter.Visit(syntaxTrees);
     }
 }

@@ -29,4 +29,18 @@ public record SymbolInfoTable
             return new None();
         }
     }
+
+    public OneOf<Error, Success> TryAssign(SymbolInfo variable)
+    {
+        if (variable.SymbolName is null)
+        {
+            return new Error();
+        }
+        if (table.ContainsKey(variable.SymbolName) == false)
+        {
+            return new Error();
+        }
+        table[variable.SymbolName] = variable;
+        return new Success();
+    }
 }

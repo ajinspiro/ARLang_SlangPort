@@ -1,3 +1,5 @@
+using ARLang.Core;
+
 namespace ARLang.SyntaxTree;
 
-public record VariableDeclareStatement(VariableExpression Expression) : ARLangStatementBase;
+public record VariableDeclareStatement(SymbolInfo SymbolInfo) : ARLangStatementBase;
