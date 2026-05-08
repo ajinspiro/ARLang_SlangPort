@@ -7,7 +7,7 @@ namespace ARLang.Visitors.TypeChecker;
 
 public class TypeChecker : IVisitorBase
 {
-    public SymbolInfoTable SymbolInfoTable { get; set; } = new();
+    private readonly SymbolInfoTable SymbolInfoTable = new();
 
     public void Visit(List<ARLangStatementBase> statements)
     {

@@ -6,7 +6,7 @@ namespace ARLang.Visitors.Interpreter;
 
 public class Interpreter : IVisitorBase
 {
-    public SymbolInfoTable SymbolInfoTable { get; set; } = new();
+    private readonly SymbolInfoTable SymbolInfoTable = new();
 
     public void Visit(List<ARLangStatementBase> statements)
     {
