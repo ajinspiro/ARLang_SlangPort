@@ -51,7 +51,6 @@ PRINTLINE d;
 "
 );
 
-
 static void TestLexerStub(params string[] expressionStrings) { }
 static void TestLexer(params string[] expressionStrings)
 {
@@ -61,14 +60,14 @@ static void TestLexer(params string[] expressionStrings)
         Console.WriteLine($"Performing lexical analysis on {expressionString}");
         Lexer lexer = new(expressionString);
         var tokens = lexer.Tokenize();
-        // foreach (var item in tokens)
-        // {
-        //     Console.WriteLine(item);
-        // }
-        // TypeChecker typeChecker = new();
+        foreach (var item in tokens)
+        {
+            Console.WriteLine(item);
+        }
+        TypeChecker typeChecker = new();
         Parser parser = new(tokens);
         List<ARLangStatementBase> syntaxTrees = parser.Parse();
-        // typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
+        typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
         interpreter.Visit(syntaxTrees);
     }
 }
