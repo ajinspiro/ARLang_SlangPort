@@ -8,22 +8,35 @@ The language supports only three data types viz
 - BOOLEAN
 
 ---
-    EBNF 
-
-    stmtlist       ::= statement { statement }
-
-    statement      ::= printstmt | printlinestmt
-
-    printstmt      ::= "print" expr ";"
-    printlinestmt  ::= "println" expr ";"
-
-    expr           ::= term { ("+" | "-") term }
-
-    term           ::= factor { ("*" | "/") factor }
-
-    factor         ::= number
-                     | "(" expr ")"
-                     | ("+" | "-") factor
+    EBNF
+    stmtlist ::= statement { statement }
+    
+    statement ::= printstmt
+                  | printlinestmt
+                  | vardeclstmt
+    
+    printstmt ::= "print" expr ";"
+    
+    printlinestmt ::= "printline" expr ";"
+    
+    vardeclstmt ::= "STRING" varname ";"
+                    | "NUMERIC" varname ";"
+                    | "BOOLEAN" varname ";"
+    
+    expr ::= term { ("+" | "-") term }
+    
+    term ::= factor { ("*" | "/") factor }
+    
+    factor ::= number
+               | variable
+               | "TRUE"
+               | "FALSE"
+               | "(" expr ")"
+               | ("+" | "-") factor
+    
+    varname ::= identifier
+    
+    variable ::= identifier
 ---
 We will add BooleanConstantExpression node and StringLiteralExpression in this step. We will also introduce RuntimeContext class and CompilationContext class.  We will add type checking and Variable support. Also we will add SymbolName to SymbolInfo. We will also introduce type checking in this step so that we will error out properly when user tries to evaluate invalid operands together like 
 10 + true
