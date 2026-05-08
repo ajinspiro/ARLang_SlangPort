@@ -13,7 +13,7 @@ public class Parser(IList<SymbolInfo> tokens)
 {
     private readonly IList<SymbolInfo> tokens = tokens;
     private int index = 0;
-    private readonly RuntimeContext context = new();
+    private readonly SymbolInfoTable SymbolInfoTable = new();
     public List<ARLangStatementBase> Parse()
     {
         var result = ParseStatementList();
@@ -57,7 +57,7 @@ public class Parser(IList<SymbolInfo> tokens)
         {
             return new ErrorStatement("Symbol name was null.");
         }
-        var union = context.SymbolInfoTable.Get(variableName.SymbolName);
+        var union = SymbolInfoTable.Get(variableName.SymbolName);
         if (union.IsT0)
         {
             return new ErrorStatement("Undeclared variable was used.");
@@ -92,7 +92,7 @@ public class Parser(IList<SymbolInfo> tokens)
         }
         // Adding variable to symbol table
         SymbolInfo symbolInfo = new(variableType.TokenType, new None(), variableName.SymbolName);
-        bool isSuccess = context.SymbolInfoTable.TryAdd(symbolInfo);
+        bool isSuccess = SymbolInfoTable.TryAdd(symbolInfo);
         if (isSuccess == false)
         {
             return new ErrorStatement($"Failed to store the variable '{variableName.SymbolName}' in symbol table.");
@@ -200,7 +200,7 @@ public class Parser(IList<SymbolInfo> tokens)
         }
         if (tokens[index].TokenType == TokenType.UNQUOTED_STRING)
         {
-            var union = context.SymbolInfoTable.Get(tokens[index++].SymbolName!); //Supressing null because lexer will set symbol name for unquoted strings. Its safe.
+            var union = SymbolInfoTable.Get(tokens[index++].SymbolName!); //Supressing null because lexer will set symbol name for unquoted strings. Its safe.
             return union.Match<ARLangExpressionBase>(
                 none => new ErrorExpression("Variable not found"),
                 symbolInfo => new VariableExpression(symbolInfo)
