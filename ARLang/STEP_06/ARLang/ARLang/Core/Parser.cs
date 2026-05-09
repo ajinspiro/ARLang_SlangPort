@@ -25,7 +25,8 @@ public class Parser(IList<SymbolInfo> tokens)
     private List<ARLangStatementBase> ParseStatementList()
     {
         List<ARLangStatementBase> statements = [];
-        while (tokens[index].TokenType != TokenType.END_OF_STRING)
+        List<TokenType> tokensToExitOn = [TokenType.ELSE, TokenType.ENDIF, TokenType.WEND, TokenType.END_OF_STRING];
+        while (!tokensToExitOn.Contains(tokens[index].TokenType))
         {
             var statement = ParseStatement();
             if (statement is ErrorStatement errorStatement)
@@ -46,9 +47,42 @@ public class Parser(IList<SymbolInfo> tokens)
             { TokenType: TokenType.PRINT } => ParsePrintStatement(),
             { TokenType: TokenType.VARIABLE_STRING or TokenType.VARIABLE_NUMBER or TokenType.VARIABLE_BOOL } => ParseVariableDeclareStatement(),
             { TokenType: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
+            { TokenType: TokenType.IF } => ParseIfStatement(),
             { TokenType: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
             _ => throw new Exception()
         };
+    }
+
+    private ARLangStatementBase ParseIfStatement()
+    {
+        index++;
+        if (TokenType.OPEN_PARENTHESIS != tokens[index].TokenType)
+        {
+            return new ErrorStatement("IF_STATEMENT : Open parenthesis missing.");
+        }
+        ARLangExpressionBase condition = ParseLogicalExpression();
+        if (TokenType.THEN != tokens[index].TokenType)
+        {
+            return new ErrorStatement("IF_STATEMENT : THEN keyword missing.");
+        }
+        index++;
+        List<ARLangStatementBase> thenBranchStatements = ParseStatementList();
+        if (TokenType.ENDIF == tokens[index].TokenType)
+        {
+            return new IfStatement(condition, thenBranchStatements);
+        }
+        if (TokenType.ELSE != tokens[index].TokenType)
+        {
+            return new ErrorStatement("IF_STATEMENT : ELSE keyword missing.");
+        }
+        index++;
+        List<ARLangStatementBase> elseBranchStatements = ParseStatementList();
+        if (TokenType.ENDIF != tokens[index].TokenType)
+        {
+            return new ErrorStatement("IF_STATEMENT : ENDIF keyword missing.");
+        }
+        index++;
+        return new IfStatement(condition, thenBranchStatements, elseBranchStatements);
     }
 
     private ARLangStatementBase ParseAssignmentStatement()
@@ -129,6 +163,50 @@ public class Parser(IList<SymbolInfo> tokens)
         return new PrintLineStatement(expression);
     }
 
+    private ARLangExpressionBase ParseLogicalExpression()
+    {
+        TokenType tokenType;
+        ARLangExpressionBase leftExp = ParseRelationalExpression();
+        List<TokenType> relationalOperators = [TokenType.AND, TokenType.OR];
+        while (relationalOperators.Contains(tokens[index].TokenType))
+        {
+            tokenType = tokens[index].TokenType;
+            index++;
+            ARLangExpressionBase rightExp = ParseRelationalExpression();
+            return tokenType switch
+            {
+                TokenType.AND => new LogicalAndExpression(leftExp, rightExp),
+                TokenType.OR => new LogicalOrExpression(leftExp, rightExp),
+                _ => new ErrorExpression("PARSER: Invalid relational operation")
+            };
+        }
+        return leftExp;
+    }
+
+    private ARLangExpressionBase ParseRelationalExpression()
+    {
+        TokenType tokenType;
+        ARLangExpressionBase leftExp = ParseExpression();
+        List<TokenType> relationalOperators = [TokenType.GT, TokenType.LT, TokenType.GTE, TokenType.LTE, TokenType.NEQ, TokenType.EQ];
+        while (relationalOperators.Contains(tokens[index].TokenType))
+        {
+            tokenType = tokens[index].TokenType;
+            index++;
+            ARLangExpressionBase rightExp = ParseExpression();
+            return tokenType switch
+            {
+                TokenType.GT => new RelationalGtExpression(leftExp, rightExp),
+                TokenType.GTE => new RelationalGteExpression(leftExp, rightExp),
+                TokenType.LT => new RelationalLtExpression(leftExp, rightExp),
+                TokenType.LTE => new RelationalLteExpression(leftExp, rightExp),
+                TokenType.EQ => new RelationalEqExpression(leftExp, rightExp),
+                TokenType.NEQ => new RelationalNeqExpression(leftExp, rightExp),
+                _ => new ErrorExpression("PARSER: Invalid relational operation")
+            };
+        }
+        return leftExp;
+    }
+
     private ARLangExpressionBase ParseExpression()
     {
         ARLangExpressionBase leftExp = ParseTerm();
@@ -177,7 +255,7 @@ public class Parser(IList<SymbolInfo> tokens)
         {
             // Nested expression
             index++;
-            ARLangExpressionBase returnValue = ParseExpression();
+            ARLangExpressionBase returnValue = ParseLogicalExpression();
             if (tokens[index].TokenType != TokenType.CLOSE_PARENTHESIS)
             {
                 return new ErrorExpression("Invalid expression: Missing close parenthesis");
@@ -198,6 +276,12 @@ public class Parser(IList<SymbolInfo> tokens)
             // Unary minus expression
             ARLangExpressionBase factor = ParseFactor();
             return new UnaryMinusExpression(factor);
+        }
+        if (tokens[index].TokenType == TokenType.NOT)
+        {
+            index++;
+            ARLangExpressionBase factor = ParseFactor();
+            return new LogicalNotExpression(factor);
         }
         if (tokens[index].TokenType == TokenType.UNQUOTED_STRING)
         {
