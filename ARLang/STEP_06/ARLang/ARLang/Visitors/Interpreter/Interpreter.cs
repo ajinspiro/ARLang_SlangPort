@@ -175,6 +175,17 @@ public class Interpreter : IVisitorBase
             RelationalNeqExpression e => VisitRelationalNeqExpression(e),
             LogicalAndExpression e => VisitLogicalAndExpression(e),
             LogicalOrExpression e => VisitLogicalOrExpression(e),
+            LogicalNotExpression e => VisitLogicalNotExpression(e),
+            _ => new ErrorExpression("Invalid expression")
+        };
+    }
+
+    private ARLangExpressionBase VisitLogicalNotExpression(LogicalNotExpression e)
+    {
+        ARLangExpressionBase expression = VisitExpression(e.Expression);
+        return expression switch
+        {
+            BooleanConstantExpression b => new BooleanConstantExpression(!b.Value),
             _ => new ErrorExpression("Invalid expression")
         };
     }

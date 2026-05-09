@@ -50,10 +50,10 @@ d= FALSE;
 PRINTLINE d;
 "
 );
-TestLexerStub(@"
+TestLexer(@"
 Numeric c;
 c = 2;
-if ( c == 20  || c == 2) then
+if ( !!(c == 20  || c == 2) ) then
    PRINTLINE ""Hello World"";
    PRINTLINE ""Hello World"";
    PRINTLINE ""Hello World"";
@@ -61,7 +61,7 @@ else
     PRINTLINE ""ELSE part"";
 endif
 ");
-TestLexer(@"
+TestLexerStub(@"
 NUMERIC I;
 I = 0;
 WHILE ( I <= 10 )
@@ -69,6 +69,13 @@ WHILE ( I <= 10 )
   I = I + 1;
 WEND
 ");
+TestLexerStub(
+@"
+Boolean b;
+b=!FALSE;
+PRINTLINE b;
+" 
+);
 static void TestLexerStub(params string[] expressionStrings) { }
 static void TestLexer(params string[] expressionStrings)
 {
