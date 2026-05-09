@@ -38,10 +38,66 @@ public class TypeChecker : IVisitorBase
         {
             return VisitAssignmentStatement(assignmentStatement);
         }
+        else if (statement is IfStatement ifStatement)
+        {
+            return VisitIfStatement(ifStatement);
+        }
+        else if (statement is WhileStatement whileStatement)
+        {
+            return VisitWhileStatement(whileStatement);
+        }
         else
         {
             return new Error<string>("TYPE_ERR: Invalid statement.");
         }
+    }
+
+    private TypeCheckResult VisitWhileStatement(WhileStatement whileStatement)
+    {
+        TypeCheckResult conditionTypeUnion = VisitExpression(whileStatement.Condition);
+        if (conditionTypeUnion.IsError)
+        {
+            return conditionTypeUnion.AsError;
+        }
+        try
+        {
+            Visit(whileStatement.Body);
+        }
+        catch (Exception ex)
+        {
+            return new Error<string>(ex.Message);
+        }
+        return conditionTypeUnion.AsSuccess;
+    }
+
+    private TypeCheckResult VisitIfStatement(IfStatement ifStatement)
+    {
+        TypeCheckResult conditionTypeUnion = VisitExpression(ifStatement.Condition);
+        if (conditionTypeUnion.IsError)
+        {
+            return conditionTypeUnion.AsError;
+        }
+        try
+        {
+            Visit(ifStatement.ThenBranch);
+        }
+        catch (Exception ex)
+        {
+            return new Error<string>(ex.Message);
+        }
+        if (ifStatement.ElseBranch is null)
+        {
+            return conditionTypeUnion.AsSuccess;
+        }
+        try
+        {
+            Visit(ifStatement.ElseBranch);
+        }
+        catch (Exception ex)
+        {
+            return new Error<string>(ex.Message);
+        }
+        return conditionTypeUnion.AsSuccess;
     }
 
     private TypeCheckResult VisitAssignmentStatement(AssignmentStatement assignmentStatement)
@@ -124,8 +180,109 @@ public class TypeChecker : IVisitorBase
             BooleanConstantExpression => SupportedTypes.Boolean,
             StringLiteralExpression => SupportedTypes.String,
             VariableExpression e => VisitVariableAccessExpression(e),
+            LogicalAndExpression e => VisitLogicalAndExpression(e),
+            LogicalOrExpression e => VisitLogicalOrExpression(e),
+            LogicalNotExpression e => VisitLogicalNotExpression(e),
+            RelationalEqExpression e => VisitRelationalEqExpression(e),
+            RelationalGteExpression e => VisitRelationalGteExpression(e),
+            RelationalGtExpression e => VisitRelationalGtExpression(e),
+            RelationalLteExpression e => VisitRelationalLteExpression(e),
+            RelationalLtExpression e => VisitRelationalLtExpression(e),
+            RelationalNeqExpression e => VisitRelationalNeqExpression(e),
             _ => new Error<string>("Invalid expression")
         };
+    }
+
+    private TypeCheckResult VisitRelationalNeqExpression(RelationalNeqExpression e)
+    {
+        return VisitRelationalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitRelationalLtExpression(RelationalLtExpression e)
+    {
+        return VisitRelationalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitRelationalLteExpression(RelationalLteExpression e)
+    {
+        return VisitRelationalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitRelationalGtExpression(RelationalGtExpression e)
+    {
+        return VisitRelationalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitRelationalGteExpression(RelationalGteExpression e)
+    {
+        return VisitRelationalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitRelationalEqExpression(RelationalEqExpression e)
+    {
+        return VisitRelationalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitRelationalExpressionCommon(ARLangExpressionBase Expression1, ARLangExpressionBase Expression2)
+    {
+        var resultUnion1 = VisitExpression(Expression1);
+        if (resultUnion1.IsError)
+        {
+            return resultUnion1.AsError;
+        }
+        var resultUnion2 = VisitExpression(Expression2);
+        if (resultUnion2.IsError)
+        {
+            return resultUnion2.AsError;
+        }
+        if (resultUnion1.AsSuccess == resultUnion2.AsSuccess)
+        {
+            return SupportedTypes.Boolean;
+        }
+        return new Error<string>("TYPE_ERR: type mismatch in relational expression.");
+    }
+
+    private TypeCheckResult VisitLogicalNotExpression(LogicalNotExpression e)
+    {
+        var resultUnion = VisitExpression(e.Expression);
+        if (resultUnion.IsError)
+        {
+            return resultUnion.AsError;
+        }
+        if (resultUnion.AsSuccess == SupportedTypes.Boolean)
+        {
+            return SupportedTypes.Boolean;
+        }
+        return new Error<string>("TYPE_ERR: Logical NOT expression type error. Non boolean expression encountered.");
+    }
+
+    private TypeCheckResult VisitLogicalOrExpression(LogicalOrExpression e)
+    {
+        return VisitLogicalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitLogicalAndExpression(LogicalAndExpression e)
+    {
+        return VisitLogicalExpressionCommon(e.Expression1, e.Expression2);
+    }
+
+    private TypeCheckResult VisitLogicalExpressionCommon(ARLangExpressionBase Expression1, ARLangExpressionBase Expression2)
+    {
+        var resultUnion1 = VisitExpression(Expression1);
+        if (resultUnion1.IsError)
+        {
+            return resultUnion1.AsError;
+        }
+        var resultUnion2 = VisitExpression(Expression2);
+        if (resultUnion2.IsError)
+        {
+            return resultUnion2.AsError;
+        }
+        if (resultUnion1.AsSuccess == resultUnion2.AsSuccess && resultUnion2.AsSuccess == SupportedTypes.Boolean)
+        {
+            return SupportedTypes.Boolean;
+        }
+        return new Error<string>("TYPE_ERR: Logical expression type error. Non boolean expression encountered.");
     }
 
     private TypeCheckResult VisitVariableAccessExpression(VariableExpression e)

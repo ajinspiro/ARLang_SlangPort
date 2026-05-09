@@ -34,6 +34,46 @@ public class Interpreter : IVisitorBase
         {
             VisitAssignmentStatement(assignmentStatement);
         }
+        else if (statement is IfStatement ifStatement)
+        {
+            VisitIfStatement(ifStatement);
+        }
+        else if (statement is WhileStatement whileStatement)
+        {
+            VisitWhileStatement(whileStatement);
+        }
+    }
+
+    private void VisitWhileStatement(WhileStatement whileStatement)
+    {
+        while (true)
+        {
+            ARLangExpressionBase conditionValue = VisitExpression(whileStatement.Condition);
+            var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
+            if (conditionValueBoolean.Value)
+            {
+                Visit(whileStatement.Body);
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    private void VisitIfStatement(IfStatement ifStatement)
+    {
+        ARLangExpressionBase conditionValue = VisitExpression(ifStatement.Condition);
+        var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
+        if (conditionValueBoolean.Value)
+        {
+            Visit(ifStatement.ThenBranch);
+            return;
+        }
+        else if (ifStatement.ElseBranch is not null)
+        {
+            Visit(ifStatement.ElseBranch);
+        }
     }
 
     private void VisitVariableDeclareStatement(VariableDeclareStatement variableDeclareStatement)
@@ -127,7 +167,131 @@ public class Interpreter : IVisitorBase
             BooleanConstantExpression e => e,
             StringLiteralExpression e => e,
             VariableExpression e => VisitVariableAccessExpression(e),
+            RelationalEqExpression e => VisitRelationalEqExpression(e),
+            RelationalGtExpression e => VisitRelationalGtExpression(e),
+            RelationalLtExpression e => VisitRelationalLtExpression(e),
+            RelationalGteExpression e => VisitRelationalGteExpression(e),
+            RelationalLteExpression e => VisitRelationalLteExpression(e),
+            RelationalNeqExpression e => VisitRelationalNeqExpression(e),
+            LogicalAndExpression e => VisitLogicalAndExpression(e),
+            LogicalOrExpression e => VisitLogicalOrExpression(e),
             _ => new ErrorExpression("Invalid expression")
+        };
+    }
+
+    private ARLangExpressionBase VisitLogicalOrExpression(LogicalOrExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+
+        return (result1, result2) switch
+        {
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value || b2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid logical AND operation")
+        };
+    }
+
+    // private ARLangExpressionBase VisitLogicalOrSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
+    // {
+    //     ARLangExpressionBase bool1 = VisitExpression(r1);
+    //     ARLangExpressionBase bool2 = VisitExpression(r2);
+    //     return (bool1, bool2) switch
+    //     {
+    //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value || b2.Value), // OR
+    //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
+    //     };
+    // }
+
+    private ARLangExpressionBase VisitLogicalAndExpression(LogicalAndExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+
+        return (result1, result2) switch
+        {
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value && b2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid logical AND operation")
+        };
+    }
+
+    // private ARLangExpressionBase VisitLogicalAndSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
+    // {
+    //     ARLangExpressionBase bool1 = VisitExpression(r1);
+    //     ARLangExpressionBase bool2 = VisitExpression(r2);
+    //     return (bool1, bool2) switch
+    //     {
+    //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value && b2.Value), // AND
+    //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
+    //     };
+    // }
+
+    private ARLangExpressionBase VisitRelationalNeqExpression(RelationalNeqExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value != n2.Value),
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value != b2.Value),
+            (StringLiteralExpression s1, StringLiteralExpression s2) => new BooleanConstantExpression(s1.Value != s2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational NEQ operation")
+        };
+    }
+
+    private ARLangExpressionBase VisitRelationalLteExpression(RelationalLteExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value <= n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational LTE operation")
+        };
+    }
+
+    private ARLangExpressionBase VisitRelationalGteExpression(RelationalGteExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value >= n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational GTE operation")
+        };
+    }
+
+    private ARLangExpressionBase VisitRelationalLtExpression(RelationalLtExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value < n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational LT operation")
+        };
+    }
+
+    private ARLangExpressionBase VisitRelationalGtExpression(RelationalGtExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value > n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational GT operation")
+        };
+    }
+
+    private ARLangExpressionBase VisitRelationalEqExpression(RelationalEqExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value == n2.Value),
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value == b2.Value),
+            (StringLiteralExpression s1, StringLiteralExpression s2) => new BooleanConstantExpression(s1.Value == s2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational EQ operation")
         };
     }
 

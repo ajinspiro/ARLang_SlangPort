@@ -50,14 +50,24 @@ d= FALSE;
 PRINTLINE d;
 "
 );
-TestLexer(@"
+TestLexerStub(@"
 Numeric c;
 c = 2;
-if ( c == 20 ) then
+if ( c == 20  || c == 2) then
    PRINTLINE ""Hello World"";
    PRINTLINE ""Hello World"";
    PRINTLINE ""Hello World"";
+else
+    PRINTLINE ""ELSE part"";
 endif
+");
+TestLexer(@"
+NUMERIC I;
+I = 0;
+WHILE ( I <= 10 )
+  PRINTLINE I;
+  I = I + 1;
+WEND
 ");
 static void TestLexerStub(params string[] expressionStrings) { }
 static void TestLexer(params string[] expressionStrings)
@@ -72,10 +82,10 @@ static void TestLexer(params string[] expressionStrings)
         {
             Console.WriteLine(item);
         }
-        // TypeChecker typeChecker = new();
+        TypeChecker typeChecker = new();
         Parser parser = new(tokens);
         List<ARLangStatementBase> syntaxTrees = parser.Parse();
-        // typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
-        // interpreter.Visit(syntaxTrees);
+        typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
+        interpreter.Visit(syntaxTrees);
     }
 }

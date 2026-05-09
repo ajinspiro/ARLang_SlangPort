@@ -48,9 +48,22 @@ public class Parser(IList<SymbolInfo> tokens)
             { TokenType: TokenType.VARIABLE_STRING or TokenType.VARIABLE_NUMBER or TokenType.VARIABLE_BOOL } => ParseVariableDeclareStatement(),
             { TokenType: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
             { TokenType: TokenType.IF } => ParseIfStatement(),
+            { TokenType: TokenType.WHILE } => ParseWhileStatement(),
             { TokenType: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
             _ => throw new Exception()
         };
+    }
+
+    private ARLangStatementBase ParseWhileStatement()
+    {
+        index++;
+        ARLangExpressionBase logicalExpression = ParseLogicalExpression();
+        List<ARLangStatementBase> loopBody = ParseStatementList();
+        if (tokens[index].TokenType != TokenType.WEND)
+        {
+            return new ErrorStatement("PARSER: WEND keyword missing.");
+        }
+        return new WhileStatement(logicalExpression, loopBody);
     }
 
     private ARLangStatementBase ParseIfStatement()
