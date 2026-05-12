@@ -47,5 +47,11 @@ public enum TokenType
     ELSE,
     ENDIF,
     WHILE,
-    WEND
+    WEND,
+
+    // Step 7 : for supporting functions
+    FUNCTION,
+    END,
+    RETURN,
+    COMMA,                  // Used for separating parameters in a function's parameter list
 }

@@ -49,9 +49,15 @@ public class Parser(IList<SymbolInfo> tokens)
             { TokenType: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
             { TokenType: TokenType.IF } => ParseIfStatement(),
             { TokenType: TokenType.WHILE } => ParseWhileStatement(),
+            { TokenType: TokenType.FUNCTION } => ParseFunctionDefinition(), // TODO: introduce a declaration layer
             { TokenType: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
             _ => throw new Exception()
         };
+    }
+
+    private ARLangStatementBase ParseFunctionDefinition()
+    {
+        throw new NotImplementedException();
     }
 
     private ARLangStatementBase ParseWhileStatement()

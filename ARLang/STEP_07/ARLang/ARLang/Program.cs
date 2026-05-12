@@ -53,7 +53,7 @@ PRINTLINE d;
 TestLexer(@"
 Numeric c;
 c = 2;
-if ( !!(c == 20  || c == 2) ) then
+if ( !(c == 20  || c == 2) ) then
    PRINTLINE ""Hello World"";
    PRINTLINE ""Hello World"";
    PRINTLINE ""Hello World"";

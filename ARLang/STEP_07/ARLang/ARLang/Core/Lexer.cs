@@ -22,6 +22,10 @@ public class Lexer
       new (TokenType.ENDIF, "ENDIF"),
       new (TokenType.WHILE, "WHILE"),
       new (TokenType.WEND, "WEND"),
+      // Step 7 Start
+      new (TokenType.FUNCTION, "FUNCTION"),
+      new (TokenType.END, "END"),
+      new (TokenType.RETURN, "RETURN")
     ];
 
     public Lexer(string expressionString)
@@ -101,6 +105,10 @@ public class Lexer
                 }
             case '*':
                 tok = TokenType.STAR;
+                index++;
+                break;
+            case ',':
+                tok = TokenType.COMMA;
                 index++;
                 break;
             case '(':
