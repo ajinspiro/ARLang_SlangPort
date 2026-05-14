@@ -9,9 +9,9 @@ namespace ARLang.Core;
     Term   ::= Factor { ("*" | "/") Factor }
     Factor ::= Number | "(" Expr ")" | ("+" | "-") Factor
   */
-public class Parser(IList<SymbolInfo> tokens)
+public class Parser(IList<Token> tokens)
 {
-    private readonly IList<SymbolInfo> tokens = tokens;
+    private readonly IList<Token> tokens = tokens;
     private int index = 0;
     private readonly SymbolInfoTable SymbolInfoTable = new();
 
@@ -26,7 +26,7 @@ public class Parser(IList<SymbolInfo> tokens)
     {
         List<ARLangStatementBase> statements = [];
         List<TokenType> tokensToExitOn = [TokenType.ELSE, TokenType.ENDIF, TokenType.WEND, TokenType.END_OF_STRING];
-        while (!tokensToExitOn.Contains(tokens[index].TokenType))
+        while (!tokensToExitOn.Contains(tokens[index].Type))
         {
             var statement = ParseStatement();
             if (statement is ErrorStatement errorStatement)
@@ -43,14 +43,14 @@ public class Parser(IList<SymbolInfo> tokens)
     {
         return tokens[index] switch
         {
-            { TokenType: TokenType.PRINTLN } => ParsePrintLineStatement(),
-            { TokenType: TokenType.PRINT } => ParsePrintStatement(),
-            { TokenType: TokenType.VARIABLE_STRING or TokenType.VARIABLE_NUMERIC or TokenType.VARIABLE_BOOL } => ParseVariableDeclareStatement(),
-            { TokenType: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
-            { TokenType: TokenType.IF } => ParseIfStatement(),
-            { TokenType: TokenType.WHILE } => ParseWhileStatement(),
-            { TokenType: TokenType.FUNCTION } => ParseFunctionDefinition(), // TODO: introduce a declaration layer
-            { TokenType: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
+            { Type: TokenType.PRINTLN } => ParsePrintLineStatement(),
+            { Type: TokenType.PRINT } => ParsePrintStatement(),
+            { Type: TokenType.VARIABLE_STRING or TokenType.VARIABLE_NUMERIC or TokenType.VARIABLE_BOOL } => ParseVariableDeclareStatement(),
+            { Type: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
+            { Type: TokenType.IF } => ParseIfStatement(),
+            { Type: TokenType.WHILE } => ParseWhileStatement(),
+            { Type: TokenType.FUNCTION } => ParseFunctionDefinition(), // TODO: introduce a declaration layer
+            { Type: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
             _ => throw new Exception()
         };
     }
@@ -65,7 +65,7 @@ public class Parser(IList<SymbolInfo> tokens)
         index++;
         ARLangExpressionBase logicalExpression = ParseLogicalExpression();
         List<ARLangStatementBase> loopBody = ParseStatementList();
-        if (tokens[index].TokenType != TokenType.WEND)
+        if (tokens[index].Type != TokenType.WEND)
         {
             return new ErrorStatement("PARSER: WEND keyword missing.");
         }
@@ -75,28 +75,28 @@ public class Parser(IList<SymbolInfo> tokens)
     private ARLangStatementBase ParseIfStatement()
     {
         index++;
-        if (TokenType.OPEN_PARENTHESIS != tokens[index].TokenType)
+        if (TokenType.OPEN_PARENTHESIS != tokens[index].Type)
         {
             return new ErrorStatement("IF_STATEMENT : Open parenthesis missing.");
         }
         ARLangExpressionBase condition = ParseLogicalExpression();
-        if (TokenType.THEN != tokens[index].TokenType)
+        if (TokenType.THEN != tokens[index].Type)
         {
             return new ErrorStatement("IF_STATEMENT : THEN keyword missing.");
         }
         index++;
         List<ARLangStatementBase> thenBranchStatements = ParseStatementList();
-        if (TokenType.ENDIF == tokens[index].TokenType)
+        if (TokenType.ENDIF == tokens[index].Type)
         {
             return new IfStatement(condition, thenBranchStatements);
         }
-        if (TokenType.ELSE != tokens[index].TokenType)
+        if (TokenType.ELSE != tokens[index].Type)
         {
             return new ErrorStatement("IF_STATEMENT : ELSE keyword missing.");
         }
         index++;
         List<ARLangStatementBase> elseBranchStatements = ParseStatementList();
-        if (TokenType.ENDIF != tokens[index].TokenType)
+        if (TokenType.ENDIF != tokens[index].Type)
         {
             return new ErrorStatement("IF_STATEMENT : ENDIF keyword missing.");
         }
@@ -106,24 +106,24 @@ public class Parser(IList<SymbolInfo> tokens)
 
     private ARLangStatementBase ParseAssignmentStatement()
     {
-        SymbolInfo variableName = tokens[index];
-        if (variableName.SymbolName is null)
+        Token variableName = tokens[index];
+        if (variableName.Value is null)
         {
             return new ErrorStatement("Symbol name was null.");
         }
-        var union = SymbolInfoTable.Get(variableName.SymbolName);
+        var union = SymbolInfoTable.Get(variableName.Value);
         if (union.IsT0)
         {
             return new ErrorStatement("Undeclared variable was used.");
         }
         index++; // move to = operator
-        if (tokens[index].TokenType != TokenType.ASSIGN)
+        if (tokens[index].Type != TokenType.ASSIGN)
         {
             return new ErrorStatement("Assignment operator expected.");
         }
         index++; // move to the expression
         var expression = ParseExpression();
-        if (tokens[index++].TokenType != TokenType.SEMICOLON)
+        if (tokens[index++].Type != TokenType.SEMICOLON)
         {
             return new ErrorStatement("Semicolon missing.");
         }
@@ -132,26 +132,26 @@ public class Parser(IList<SymbolInfo> tokens)
 
     private ARLangStatementBase ParseVariableDeclareStatement()
     {
-        SymbolInfo variableType = tokens[index];
+        Token variableType = tokens[index];
         index++;
-        if (tokens[index].TokenType != TokenType.UNQUOTED_STRING)
+        if (tokens[index].Type != TokenType.UNQUOTED_STRING)
         {
             return new ErrorStatement("Syntax error: datatype must be followed by a variable name.");
         }
-        SymbolInfo variableName = tokens[index];
+        Token variableName = tokens[index];
         index++;
-        if (tokens[index].TokenType != TokenType.SEMICOLON)
+        if (tokens[index].Type != TokenType.SEMICOLON)
         {
             return new ErrorStatement($"Semicolon expexted after a statement.");
         }
         // Adding variable to symbol table
-        SymbolInfo symbolInfo = new(variableType.TokenType, new None(), variableName.SymbolName);
+        SymbolInfo symbolInfo = new(variableType.Type, new None(), variableName.Value);
         bool isSuccess = SymbolInfoTable.TryAdd(symbolInfo);
         if (isSuccess == false)
         {
-            return new ErrorStatement($"Failed to store the variable '{variableName.SymbolName}' in symbol table.");
+            return new ErrorStatement($"Failed to store the variable '{variableName.Value}' in symbol table.");
         }
-        if (tokens[index++].TokenType != TokenType.SEMICOLON)
+        if (tokens[index++].Type != TokenType.SEMICOLON)
         {
             return new ErrorStatement("Semicolon missing.");
         }
@@ -162,7 +162,7 @@ public class Parser(IList<SymbolInfo> tokens)
     {
         index++;
         ARLangExpressionBase expression = ParseExpression();
-        if (tokens[index].TokenType != TokenType.SEMICOLON)
+        if (tokens[index].Type != TokenType.SEMICOLON)
         {
             return new ErrorStatement("Semicolon missing.");
         }
@@ -174,7 +174,7 @@ public class Parser(IList<SymbolInfo> tokens)
     {
         index++;
         ARLangExpressionBase expression = ParseExpression();
-        if (tokens[index].TokenType != TokenType.SEMICOLON)
+        if (tokens[index].Type != TokenType.SEMICOLON)
         {
             return new ErrorStatement("Semicolon missing.");
         }
@@ -187,9 +187,9 @@ public class Parser(IList<SymbolInfo> tokens)
         TokenType tokenType;
         ARLangExpressionBase leftExp = ParseRelationalExpression();
         List<TokenType> relationalOperators = [TokenType.AND, TokenType.OR];
-        while (relationalOperators.Contains(tokens[index].TokenType))
+        while (relationalOperators.Contains(tokens[index].Type))
         {
-            tokenType = tokens[index].TokenType;
+            tokenType = tokens[index].Type;
             index++;
             ARLangExpressionBase rightExp = ParseRelationalExpression();
             return tokenType switch
@@ -207,9 +207,9 @@ public class Parser(IList<SymbolInfo> tokens)
         TokenType tokenType;
         ARLangExpressionBase leftExp = ParseExpression();
         List<TokenType> relationalOperators = [TokenType.GT, TokenType.LT, TokenType.GTE, TokenType.LTE, TokenType.NEQ, TokenType.EQ];
-        while (relationalOperators.Contains(tokens[index].TokenType))
+        while (relationalOperators.Contains(tokens[index].Type))
         {
-            tokenType = tokens[index].TokenType;
+            tokenType = tokens[index].Type;
             index++;
             ARLangExpressionBase rightExp = ParseExpression();
             return tokenType switch
@@ -229,12 +229,12 @@ public class Parser(IList<SymbolInfo> tokens)
     private ARLangExpressionBase ParseExpression()
     {
         ARLangExpressionBase leftExp = ParseTerm();
-        while (tokens[index].TokenType == TokenType.PLUS || tokens[index].TokenType == TokenType.MINUS)
+        while (tokens[index].Type == TokenType.PLUS || tokens[index].Type == TokenType.MINUS)
         {
-            SymbolInfo operatorBackup = tokens[index];
+            Token operatorBackup = tokens[index];
             index++;
             ARLangExpressionBase rightExp = ParseTerm();
-            leftExp = operatorBackup.TokenType == TokenType.PLUS ? new AdditionExpression(leftExp, rightExp) : new SubtractionExpression(leftExp, rightExp);
+            leftExp = operatorBackup.Type == TokenType.PLUS ? new AdditionExpression(leftExp, rightExp) : new SubtractionExpression(leftExp, rightExp);
         }
         return leftExp;
     }
@@ -242,69 +242,67 @@ public class Parser(IList<SymbolInfo> tokens)
     private ARLangExpressionBase ParseTerm()
     {
         ARLangExpressionBase leftExp = ParseFactor();
-        while (tokens[index].TokenType == TokenType.STAR || tokens[index].TokenType == TokenType.SLASH)
+        while (tokens[index].Type == TokenType.STAR || tokens[index].Type == TokenType.SLASH)
         {
-            SymbolInfo operatorBackup = tokens[index];
+            Token operatorBackup = tokens[index];
             index++;
             ARLangExpressionBase rightExp = ParseFactor();
-            leftExp = operatorBackup.TokenType == TokenType.STAR ? new MultiplicationExpression(leftExp, rightExp) : new DivisionExpression(leftExp, rightExp);
+            leftExp = operatorBackup.Type == TokenType.STAR ? new MultiplicationExpression(leftExp, rightExp) : new DivisionExpression(leftExp, rightExp);
         }
         return leftExp;
     }
 
     private ARLangExpressionBase ParseFactor()
     {
-        if (tokens[index].TokenType == TokenType.NUMBER)
+        if (tokens[index].Type == TokenType.NUMBER)
         {
-            // Extracting number from union
-            // Value will be Number. So lets use AsT1 property directly. Its safe.
-            return new NumericConstantExpression(tokens[index++].Value.AsT1);
+            // Value will be Number. So lets parse value directly. Its safe.
+            return new NumericConstantExpression(double.Parse(tokens[index++].Value));
         }
-        if (tokens[index].TokenType == TokenType.STRING)
+        if (tokens[index].Type == TokenType.STRING)
         {
-            // Extracting number from union
-            // Value will be Number. So lets use AsT2 property directly. Its safe.
-            return new StringLiteralExpression(tokens[index++].Value.AsT2);
+            // Extracting number from union 
+            return new StringLiteralExpression(tokens[index++].Value);
         }
-        if (tokens[index].TokenType == TokenType.BOOL_TRUE || tokens[index].TokenType == TokenType.BOOL_FALSE)
+        if (tokens[index].Type == TokenType.BOOL_TRUE || tokens[index].Type == TokenType.BOOL_FALSE)
         {
-            return new BooleanConstantExpression(tokens[index++].TokenType == TokenType.BOOL_TRUE ? true : false);
+            return new BooleanConstantExpression(tokens[index++].Type == TokenType.BOOL_TRUE ? true : false);
         }
-        if (tokens[index].TokenType == TokenType.OPEN_PARENTHESIS)
+        if (tokens[index].Type == TokenType.OPEN_PARENTHESIS)
         {
             // Nested expression
             index++;
             ARLangExpressionBase returnValue = ParseLogicalExpression();
-            if (tokens[index].TokenType != TokenType.CLOSE_PARENTHESIS)
+            if (tokens[index].Type != TokenType.CLOSE_PARENTHESIS)
             {
                 return new ErrorExpression("Invalid expression: Missing close parenthesis");
             }
             index++;
             return returnValue;
         }
-        if (tokens[index].TokenType == TokenType.PLUS)
+        if (tokens[index].Type == TokenType.PLUS)
         {
             index++;
             // Unary plus expression
             ARLangExpressionBase factor = ParseFactor();
             return new UnaryPlusExpression(factor);
         }
-        if (tokens[index].TokenType == TokenType.MINUS)
+        if (tokens[index].Type == TokenType.MINUS)
         {
             index++;
             // Unary minus expression
             ARLangExpressionBase factor = ParseFactor();
             return new UnaryMinusExpression(factor);
         }
-        if (tokens[index].TokenType == TokenType.NOT)
+        if (tokens[index].Type == TokenType.NOT)
         {
             index++;
             ARLangExpressionBase factor = ParseFactor();
             return new LogicalNotExpression(factor);
         }
-        if (tokens[index].TokenType == TokenType.UNQUOTED_STRING)
+        if (tokens[index].Type == TokenType.UNQUOTED_STRING)
         {
-            var union = SymbolInfoTable.Get(tokens[index++].SymbolName!); //Supressing null because lexer will set symbol name for unquoted strings. Its safe.
+            var union = SymbolInfoTable.Get(tokens[index++].Value); //Supressing null because lexer will set symbol name for unquoted strings. Its safe.
             return union.Match<ARLangExpressionBase>(
                 none => new ErrorExpression("Variable not found"),
                 symbolInfo => new VariableExpression(symbolInfo)
