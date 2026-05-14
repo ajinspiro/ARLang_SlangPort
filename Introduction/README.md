@@ -7,3 +7,4 @@
 - Also hand craft the entire program without using ANTLR. 
 - Learn inheritence and type hierarchy.
 - Learn Visitor pattern.
+- Learn modern features of C#/Java like records, switch expressions, pattern matching and union types.
