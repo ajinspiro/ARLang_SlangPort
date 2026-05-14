@@ -5,12 +5,11 @@ namespace ARLang.Core;
 
 public class Lexer
 {
-    private readonly string expressionString;
     private int index = 0;
     private readonly List<KeywordEntry> keywords = [
       new (TokenType.PRINT, "PRINT"),
       new (TokenType.PRINTLN, "PRINTLINE"),
-      new (TokenType.VARIABLE_NUMBER, "NUMERIC"),
+      new (TokenType.VARIABLE_NUMERIC, "NUMERIC"),
       new (TokenType.VARIABLE_STRING, "STRING"),
       new (TokenType.VARIABLE_BOOL, "BOOLEAN"),
       new (TokenType.BOOL_TRUE, "TRUE"),
@@ -28,26 +27,21 @@ public class Lexer
       new (TokenType.RETURN, "RETURN")
     ];
 
-    public Lexer(string expressionString)
+    public ImmutableList<Token> Tokenize(string expressionString)
     {
-        this.expressionString = expressionString;
-    }
-
-    public ImmutableList<SymbolInfo> Tokenize()
-    {
-        List<SymbolInfo> symbols = [];
-        SymbolInfo temp;
+        List<Token> symbols = [];
+        Token temp;
         do
         {
-            temp = GetToken();
+            temp = GetToken(expressionString);
             symbols.Add(temp);
-        } while (temp.TokenType != TokenType.END_OF_STRING);
-        return symbols.Where(x => x.TokenType != TokenType.COMMENT).ToImmutableList(); // Remove comment tokens before returning
+        } while (temp.Type != TokenType.END_OF_STRING);
+        index = 0; // reset the lexer so that the lexer instance can be reused.
+        return symbols.Where(x => x.Type != TokenType.COMMENT).ToImmutableList(); // Remove comment tokens before returning
     }
 
-    private SymbolInfo GetToken()
+    private Token GetToken(string expressionString)
     {
-        double valueOfTokenizedNumber = 0;
         string valueOfTokenizedString = string.Empty;
         // Skip white spaces
         while (index < expressionString.Length && (expressionString[index] == ' ' || expressionString[index] == '\t' || expressionString[index] == '\r' || expressionString[index] == '\n'))
@@ -58,7 +52,7 @@ public class Lexer
         // if end of string is reached, return
         if (index == expressionString.Length)
         {
-            return new SymbolInfo(TokenType.END_OF_STRING, new None());
+            return new Token(TokenType.END_OF_STRING, string.Empty);
         }
 
         TokenType tok;
@@ -235,7 +229,7 @@ public class Lexer
                             index++;
                         }
                     }
-                    valueOfTokenizedNumber = Convert.ToDouble(str);
+                    valueOfTokenizedString = str;
                     tok = TokenType.NUMBER;
                 }
                 break;
@@ -294,14 +288,14 @@ public class Lexer
                     }
                 }
         }
-        ARLangValue value = tok switch
-        {
-            TokenType.NUMBER => valueOfTokenizedNumber,
-            TokenType.STRING => valueOfTokenizedString,
-            //TokenType.UNQUOTED_STRING => valueOfTokenizedString,
-            _ => new None(),
-            // Each boolean value (true and false) has dedicated token type. So, the parser can identify the value directly from token type.
-        };
-        return new SymbolInfo(tok, value, SymbolName: tok == TokenType.UNQUOTED_STRING ? valueOfTokenizedString : null);
+        // ARLangValue value = tok switch
+        // {
+        //     TokenType.NUMBER => valueOfTokenizedNumber,
+        //     TokenType.STRING => valueOfTokenizedString,
+        //     //TokenType.UNQUOTED_STRING => valueOfTokenizedString,
+        //     _ => new None(),
+        //     // Each boolean value (true and false) has dedicated token type. So, the parser can identify the value directly from token type.
+        // };
+        return new Token(tok, valueOfTokenizedString);
     }
 }

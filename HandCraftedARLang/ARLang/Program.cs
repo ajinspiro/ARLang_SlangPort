@@ -14,43 +14,22 @@ using ARLang.Visitors.TypeChecker;
 TestLexerStub(
 @"
 NUMERIC a;  
-
 a = 2*3+5* 30 + -(4*5+3);  
-
 PRINTLINE a;  
-
-
-
 PRINT ""Hello "" + ""World"";
-
-
-
 PRINTLINE """";
-
-
 STRING c;
-
 c = ""Hello "";   
-
-
-
 c = c + ""World"";
-
 PRINTLINE c;
-
-
 BOOLEAN d;
-
 d= TRUE;
-
 PRINTLINE d;
-
 d= FALSE;
-
 PRINTLINE d;
 "
 );
-TestLexer(@"
+TestLexerStub(@"
 Numeric c;
 c = 2;
 if ( !(c == 20  || c == 2) ) then
@@ -74,25 +53,55 @@ TestLexerStub(
 Boolean b;
 b=!FALSE;
 PRINTLINE b;
-" 
+"
 );
+TestLexer(@"
+FUNCTION NUMERIC Quad( NUMERIC a , NUMERIC b , NUMERIC c )
+   NUMERIC n;
+   n = b*b - 4*a*c;
+   IF ( n < 0 ) THEN
+        return 0;
+   ELSE 
+     IF ( n == 0 ) THEN
+         return 1;
+     ELSE
+         return 2;
+     ENDIF
+   ENDIF 
+   return 0;
+END
+FUNCTION BOOLEAN MAIN()
+   NUMERIC d;
+   d= Quad(1,0-6,9);
+
+   IF ( d == 0 ) then
+         PRINT ""No Roots"";
+   ELSE
+       IF ( d  == 1 ) then
+         PRINT  ""Discriminant is zero"";
+       ELSE
+         PRINT  ""Two roots are available"";
+       ENDIF
+   ENDIF
+END
+");
 static void TestLexerStub(params string[] expressionStrings) { }
 static void TestLexer(params string[] expressionStrings)
 {
+    Lexer lexer = new();
     Interpreter interpreter = new();
     foreach (var expressionString in expressionStrings)
     {
         Console.WriteLine($"Performing lexical analysis on {expressionString}");
-        Lexer lexer = new(expressionString);
-        var tokens = lexer.Tokenize();
+        var tokens = lexer.Tokenize(expressionString);
         foreach (var item in tokens)
         {
             Console.WriteLine(item);
         }
-        TypeChecker typeChecker = new();
-        Parser parser = new(tokens);
-        List<ARLangStatementBase> syntaxTrees = parser.Parse();
-        typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
-        interpreter.Visit(syntaxTrees);
+        // TypeChecker typeChecker = new();
+         Parser parser = new(tokens);
+        // List<ARLangStatementBase> syntaxTrees = parser.Parse();
+        // typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
+        // interpreter.Visit(syntaxTrees);
     }
 }

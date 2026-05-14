@@ -20,7 +20,7 @@ public enum TokenType
     SEMICOLON,
 
     // Step 4 Start
-    VARIABLE_NUMBER,        // Variable names that store numeric value
+    VARIABLE_NUMERIC,       // Variable names that store numeric value
     VARIABLE_STRING,        // Variable names that store string value 
     VARIABLE_BOOL,          // Variable names that store boolean value
     COMMENT,                // Comment Token ( presently not used )   

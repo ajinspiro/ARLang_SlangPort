@@ -113,7 +113,7 @@ public class TypeChecker : IVisitorBase
         }
         TypeCheckResult s = assignmentStatement.SymbolInfo.TokenType switch
         {
-            TokenType.VARIABLE_NUMBER => SupportedTypes.Numeric,
+            TokenType.VARIABLE_NUMERIC => SupportedTypes.Numeric,
             TokenType.VARIABLE_STRING => SupportedTypes.String,
             TokenType.VARIABLE_BOOL => SupportedTypes.Boolean,
             _ => new Error<string>($"TYPE_ERR: Invalid datatype.")
@@ -151,7 +151,7 @@ public class TypeChecker : IVisitorBase
         }
         return variableDeclareStatement.SymbolInfo.TokenType switch
         {
-            TokenType.VARIABLE_NUMBER => SupportedTypes.Numeric,
+            TokenType.VARIABLE_NUMERIC => SupportedTypes.Numeric,
             TokenType.VARIABLE_STRING => SupportedTypes.String,
             TokenType.VARIABLE_BOOL => SupportedTypes.Boolean,
             _ => new Error<string>($"TYPE_ERR: Invalid datatype.")

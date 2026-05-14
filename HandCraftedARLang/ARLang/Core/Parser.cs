@@ -45,7 +45,7 @@ public class Parser(IList<SymbolInfo> tokens)
         {
             { TokenType: TokenType.PRINTLN } => ParsePrintLineStatement(),
             { TokenType: TokenType.PRINT } => ParsePrintStatement(),
-            { TokenType: TokenType.VARIABLE_STRING or TokenType.VARIABLE_NUMBER or TokenType.VARIABLE_BOOL } => ParseVariableDeclareStatement(),
+            { TokenType: TokenType.VARIABLE_STRING or TokenType.VARIABLE_NUMERIC or TokenType.VARIABLE_BOOL } => ParseVariableDeclareStatement(),
             { TokenType: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
             { TokenType: TokenType.IF } => ParseIfStatement(),
             { TokenType: TokenType.WHILE } => ParseWhileStatement(),
