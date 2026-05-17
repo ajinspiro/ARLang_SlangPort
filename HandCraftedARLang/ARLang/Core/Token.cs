@@ -5,4 +5,10 @@ namespace ARLang.Core;
 /// </summary>
 /// <param name="Type"></param>
 /// <param name="Value"></param>
-public record Token(TokenType Type, string Value);
+public record Token(TokenType Type, string Value)
+{
+    public override string ToString()
+    {
+        return $"{Type} {Value}";
+    }
+};

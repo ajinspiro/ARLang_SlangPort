@@ -1,3 +1,3 @@
 namespace ARLang.SyntaxTree;
 
-public record ARLangStatementBase;
+public abstract record ARLangStatementBase;

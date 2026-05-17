@@ -85,7 +85,7 @@ FUNCTION BOOLEAN MAIN()
    ENDIF
 END
 ");
-TestLexer(@"
+TestLexerStub(@"
 BOOLEAN a;
 BOOLEAN b;
 BOOLEAN c;
@@ -111,8 +111,12 @@ ELSE
 ENDIF
 PRINTLINE a;
 ");
-TestLexerStub(@"
-NUMERIC g*;
+TestLexer(@"
+FUNCTION NUMERIC g()  
+    NUMERIC a; NUMERIC b;
+    a = 12; b = 3;
+    PRINTLINE a+b;
+END
 ");
 static void TestLexerStub(params string[] expressionStrings) { }
 static void TestLexer(params string[] expressionStrings)
@@ -129,13 +133,13 @@ static void TestLexer(params string[] expressionStrings)
         }
         // TypeChecker typeChecker = new();
         Parser parser = new(tokens);
-        List<ARLangStatementBase> syntaxTrees = parser.Parse();
-        if (syntaxTrees.Count == 1 && syntaxTrees.First() is ErrorStatement errorStatement)
+        List<ARLangDefinitionBase> syntaxTrees = parser.Parse();
+        if (syntaxTrees.Count == 1 && syntaxTrees.First() is ErrorDefinition errorDefinition)
         {
-            Console.Error.WriteLine(errorStatement.Msg);
+            Console.Error.WriteLine(errorDefinition.Msg);
             return;
         }
         // typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
-        interpreter.Visit(syntaxTrees);
+        interpreter.Visit((syntaxTrees[0] as FunctionDefinition).Body);
     }
 }

@@ -7,21 +7,108 @@ public class Parser(IList<Token> tokens)
     private readonly IList<Token> tokens = tokens;
     private int index = 0;
 
-    public List<ARLangStatementBase> Parse()
+    // public List<ARLangStatementBase> Parse()
+    // {
+    //     var result = ParseStatementList();
+    //     index = 0; // reset parser instance
+    //     return result;
+    // }
+
+    public List<ARLangDefinitionBase> Parse()
     {
-        var result = ParseStatementList();
+        var result = ParseFunctionDefinitions();
         index = 0; // reset parser instance
         return result;
+    }
+
+    private List<ARLangDefinitionBase> ParseFunctionDefinitions()
+    {
+        List<ARLangDefinitionBase> functions = [];
+        while (tokens[index].Type == TokenType.FUNCTION)
+        {
+            var fnDef = ParseFunctionDefinition();
+            if (fnDef is ErrorDefinition errorDefinition)
+            {
+                Console.Error.WriteLine(errorDefinition.Msg);
+                return [];
+            }
+            functions.Add(fnDef);
+        }
+        return functions;
+    }
+
+    private ARLangDefinitionBase ParseFunctionDefinition()
+    {
+        index++;
+        DataType functionReturnType = tokens[index].Type switch
+        {
+            TokenType.VARIABLE_BOOL => DataType.BOOLEAN,
+            TokenType.VARIABLE_STRING => DataType.STRING,
+            TokenType.VARIABLE_NUMERIC => DataType.NUMERIC,
+            _ => DataType.ILLEGAL
+        };
+        if (functionReturnType == DataType.ILLEGAL)
+        {
+            return new ErrorDefinition("PARSER: Invalid token encountered as function return type.");
+        }
+        index++;
+        string functionName = tokens[index].Value;
+        index++;
+        if (tokens[index].Type != TokenType.OPEN_PARENTHESIS)
+        {
+            return new ErrorDefinition("PARSER: Open parenthesis for function parameter list not found.");
+        }
+        index++;
+        List<FunctionParameter> parameters = [];
+        while (tokens[index].Type != TokenType.CLOSE_PARENTHESIS && tokens[index].Type != TokenType.ILLEGAL_TOKEN)
+        {
+            DataType parameterType = tokens[index].Type switch
+            {
+                TokenType.VARIABLE_BOOL => DataType.BOOLEAN,
+                TokenType.VARIABLE_STRING => DataType.STRING,
+                TokenType.VARIABLE_NUMERIC => DataType.NUMERIC,
+                _ => DataType.ILLEGAL
+            };
+            if (parameterType == DataType.ILLEGAL)
+            {
+                return new ErrorDefinition("PARSER: Invalid token encountered for function parameter.");
+            }
+            index++;
+            if (tokens[index].Type != TokenType.UNQUOTED_STRING)
+            {
+                return new ErrorDefinition("PARSER: Illegal token encountered for parameter name.");
+            }
+            string parameterName = tokens[index].Value;
+            parameters.Add(new FunctionParameter(parameterName, parameterType));
+            index++;
+            if (tokens[index].Type == TokenType.COMMA)
+            {
+                index++;
+            }
+        }
+        index++; // consume close parenthesis
+        var body = ParseStatementList();
+        if (body.Any(s => s.GetType() == typeof(ErrorStatement)))
+        {
+            string msg = (body.First(s => s.GetType() == typeof(ErrorStatement)) as ErrorStatement).Msg;
+            return new ErrorDefinition(msg);
+        }
+        if (tokens[index].Type != TokenType.END)
+        {
+            return new ErrorDefinition("PARSER: Function definition missing end keyword.");
+        }
+        index++;
+        return new FunctionDefinition(functionName, functionReturnType, parameters, body);
     }
 
     private List<ARLangStatementBase> ParseStatementList()
     {
         List<ARLangStatementBase> statements = [];
-        List<TokenType> tokensToExitOn = [TokenType.ELSE, TokenType.ENDIF, TokenType.WEND, TokenType.END_OF_STRING];
+        List<TokenType> tokensToExitOn = [TokenType.ELSE, TokenType.ENDIF, TokenType.WEND, TokenType.END, TokenType.END_OF_STRING];
         while (!tokensToExitOn.Contains(tokens[index].Type))
         {
             var statement = ParseStatement();
-            if (statement is ErrorStatement errorStatement)
+            if (statement is ErrorStatement)
             {
                 return [statement];
             }
@@ -40,15 +127,9 @@ public class Parser(IList<Token> tokens)
             { Type: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
             { Type: TokenType.IF } => ParseIfStatement(),
             { Type: TokenType.WHILE } => ParseWhileStatement(),
-            { Type: TokenType.FUNCTION } => ParseFunctionDefinition(), // TODO: introduce a declaration layer
             { Type: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
             _ => throw new Exception()
         };
-    }
-
-    private ARLangStatementBase ParseFunctionDefinition()
-    {
-        throw new NotImplementedException();
     }
 
     private ARLangStatementBase ParseWhileStatement()
