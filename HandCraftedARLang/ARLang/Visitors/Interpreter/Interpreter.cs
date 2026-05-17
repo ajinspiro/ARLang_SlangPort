@@ -114,7 +114,7 @@ public class Interpreter : IVisitorBase
         }
         else
         {
-            Console.Error.WriteLine("Invalid type of expression received in printline statement");
+            Console.Error.WriteLine("INTERPRETER: Invalid type of expression received in printline statement");
         }
     }
 
@@ -139,7 +139,7 @@ public class Interpreter : IVisitorBase
         }
         else
         {
-            Console.Error.WriteLine("Invalid type of expression received in printline statement");
+            Console.Error.WriteLine("INTERPRETER: Invalid type of expression received in printline statement");
         }
     }
 
@@ -166,7 +166,7 @@ public class Interpreter : IVisitorBase
             LogicalAndExpression e => VisitLogicalAndExpression(e),
             LogicalOrExpression e => VisitLogicalOrExpression(e),
             LogicalNotExpression e => VisitLogicalNotExpression(e),
-            _ => new ErrorExpression("Invalid expression")
+            _ => new ErrorExpression("INTERPRETER: Invalid expression")
         };
     }
 
@@ -176,7 +176,7 @@ public class Interpreter : IVisitorBase
         return expression switch
         {
             BooleanConstantExpression b => new BooleanConstantExpression(!b.Value),
-            _ => new ErrorExpression("Invalid expression")
+            _ => new ErrorExpression("INTERPRETER: Invalid expression")
         };
     }
 
@@ -296,7 +296,7 @@ public class Interpreter : IVisitorBase
         {
             (NumericConstantExpression n1, NumericConstantExpression n2) => new NumericConstantExpression(n1.Value + n2.Value),
             (StringLiteralExpression s1, StringLiteralExpression s2) => new StringLiteralExpression(string.Concat(s1.Value, s2.Value)),
-            _ => new ErrorExpression("Invalid expression passed to addition operator.")
+            _ => new ErrorExpression("INTERPRETER: Invalid expression passed to addition operator.")
         };
         return expReturn;
     }
@@ -307,11 +307,11 @@ public class Interpreter : IVisitorBase
         var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
         if (value1 is null)
         {
-            return new ErrorExpression("Expression 1 failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression 1 failed to evaluate.");
         }
         if (value2 is null)
         {
-            return new ErrorExpression("Expression 2 failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression 2 failed to evaluate.");
         }
         return new NumericConstantExpression(value1.Value - value2.Value);
     }
@@ -322,11 +322,11 @@ public class Interpreter : IVisitorBase
         var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
         if (value1 is null)
         {
-            return new ErrorExpression("Expression 1 failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression 1 failed to evaluate.");
         }
         if (value2 is null)
         {
-            return new ErrorExpression("Expression 2 failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression 2 failed to evaluate.");
         }
         return new NumericConstantExpression(value1.Value * value2.Value);
     }
@@ -337,15 +337,15 @@ public class Interpreter : IVisitorBase
         var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
         if (value1 is null)
         {
-            return new ErrorExpression("Expression 1 failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression 1 failed to evaluate.");
         }
         if (value2 is null)
         {
-            return new ErrorExpression("Expression 2 failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression 2 failed to evaluate.");
         }
         if (value2.Value is 0)
         {
-            return new ErrorExpression("Division by zero is undefined.");
+            return new ErrorExpression("INTERPRETER: Division by zero is undefined.");
         }
         return new NumericConstantExpression(value1.Value / value2.Value);
     }
@@ -355,7 +355,7 @@ public class Interpreter : IVisitorBase
         var value = VisitExpression(exp.Expression) as NumericConstantExpression;
         if (value is null)
         {
-            return new ErrorExpression("Expression failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression failed to evaluate.");
         }
         return value; // Does nothing to the value
     }
@@ -365,7 +365,7 @@ public class Interpreter : IVisitorBase
         var value = VisitExpression(exp.Expression) as NumericConstantExpression;
         if (value is null)
         {
-            return new ErrorExpression("Expression failed to evaluate.");
+            return new ErrorExpression("INTERPRETER: Expression failed to evaluate.");
         }
         return new NumericConstantExpression(-value.Value); // Negate the value
     }
