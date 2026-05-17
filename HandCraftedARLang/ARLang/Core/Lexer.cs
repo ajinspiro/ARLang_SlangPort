@@ -35,7 +35,11 @@ public class Lexer
         {
             temp = GetToken(expressionString);
             symbols.Add(temp);
-        } while (temp.Type != TokenType.END_OF_STRING);
+        } while (temp.Type != TokenType.END_OF_STRING && temp.Type != TokenType.ILLEGAL_TOKEN);
+        if (symbols.Last().Type == TokenType.ILLEGAL_TOKEN)
+        {
+            return [new Token(TokenType.ILLEGAL_TOKEN, string.Empty)];
+        }
         index = 0; // reset the lexer so that the lexer instance can be reused.
         return symbols.Where(x => x.Type != TokenType.COMMENT).ToImmutableList(); // Remove comment tokens before returning
     }
@@ -136,6 +140,20 @@ public class Lexer
                     if (expressionString[index + 1] == '|')
                     {
                         tok = TokenType.OR;
+                        index += 2;
+                    }
+                    else
+                    {
+                        tok = TokenType.ILLEGAL_TOKEN;
+                        index++;
+                    }
+                    break;
+                }
+            case '&':
+                {
+                    if (expressionString[index + 1] == '&')
+                    {
+                        tok = TokenType.AND;
                         index += 2;
                     }
                     else

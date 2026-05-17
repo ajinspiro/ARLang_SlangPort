@@ -2,4 +2,4 @@ using ARLang.Core;
 
 namespace ARLang.SyntaxTree;
 
-public record AssignmentStatement(SymbolInfo SymbolInfo, ARLangExpressionBase Expression) : ARLangStatementBase;
+public record AssignmentStatement(VariableExpression Variable, ARLangExpressionBase Expression) : ARLangStatementBase;

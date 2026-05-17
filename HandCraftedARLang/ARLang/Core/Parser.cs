@@ -1,19 +1,11 @@
 using ARLang.SyntaxTree;
-using OneOf.Types;
 
 namespace ARLang.Core;
-/* 
-    EBNF of expression evaluator
 
-    Expr   ::= Term { ("+" | "-") Term }
-    Term   ::= Factor { ("*" | "/") Factor }
-    Factor ::= Number | "(" Expr ")" | ("+" | "-") Factor
-  */
 public class Parser(IList<Token> tokens)
 {
     private readonly IList<Token> tokens = tokens;
     private int index = 0;
-    private readonly SymbolInfoTable SymbolInfoTable = new();
 
     public List<ARLangStatementBase> Parse()
     {
@@ -31,8 +23,7 @@ public class Parser(IList<Token> tokens)
             var statement = ParseStatement();
             if (statement is ErrorStatement errorStatement)
             {
-                Console.Error.WriteLine($"Error in statement: {errorStatement.Msg}");
-                return [];
+                return [statement];
             }
             statements.Add(statement);
         }
@@ -69,6 +60,7 @@ public class Parser(IList<Token> tokens)
         {
             return new ErrorStatement("PARSER: WEND keyword missing.");
         }
+        index++;
         return new WhileStatement(logicalExpression, loopBody);
     }
 
@@ -88,6 +80,7 @@ public class Parser(IList<Token> tokens)
         List<ARLangStatementBase> thenBranchStatements = ParseStatementList();
         if (TokenType.ENDIF == tokens[index].Type)
         {
+            index++;
             return new IfStatement(condition, thenBranchStatements);
         }
         if (TokenType.ELSE != tokens[index].Type)
@@ -109,25 +102,24 @@ public class Parser(IList<Token> tokens)
         Token variableName = tokens[index];
         if (variableName.Value is null)
         {
-            return new ErrorStatement("Symbol name was null.");
-        }
-        var union = SymbolInfoTable.Get(variableName.Value);
-        if (union.IsT0)
-        {
-            return new ErrorStatement("Undeclared variable was used.");
+            return new ErrorStatement("PARSER: Symbol name was null.");
         }
         index++; // move to = operator
         if (tokens[index].Type != TokenType.ASSIGN)
         {
-            return new ErrorStatement("Assignment operator expected.");
+            return new ErrorStatement("PARSER: Assignment operator expected.");
         }
         index++; // move to the expression
-        var expression = ParseExpression();
+        var expression = ParseLogicalExpression();
         if (tokens[index++].Type != TokenType.SEMICOLON)
         {
-            return new ErrorStatement("Semicolon missing.");
+            if (expression is ErrorExpression errorExpression)
+            {
+                return new ErrorStatement(errorExpression.Msg);
+            }
+            return new ErrorStatement($"PARSER: Semicolon missing.");
         }
-        return new AssignmentStatement(union.AsT1, expression);
+        return new AssignmentStatement(new VariableExpression(variableName.Value), expression);
     }
 
     private ARLangStatementBase ParseVariableDeclareStatement()
@@ -142,20 +134,21 @@ public class Parser(IList<Token> tokens)
         index++;
         if (tokens[index].Type != TokenType.SEMICOLON)
         {
-            return new ErrorStatement($"Semicolon expexted after a statement.");
+            return new ErrorStatement($"PARSER: Semicolon missing.");
         }
-        // Adding variable to symbol table
-        SymbolInfo symbolInfo = new(variableType.Type, new None(), variableName.Value);
-        bool isSuccess = SymbolInfoTable.TryAdd(symbolInfo);
-        if (isSuccess == false)
+        index++;
+        DataType type = variableType.Type switch
         {
-            return new ErrorStatement($"Failed to store the variable '{variableName.Value}' in symbol table.");
-        }
-        if (tokens[index++].Type != TokenType.SEMICOLON)
+            TokenType.VARIABLE_NUMERIC => DataType.NUMERIC,
+            TokenType.VARIABLE_STRING => DataType.STRING,
+            TokenType.VARIABLE_BOOL => DataType.BOOLEAN,
+            _ => DataType.ILLEGAL
+        };
+        if (type == DataType.ILLEGAL)
         {
-            return new ErrorStatement("Semicolon missing.");
+            return new ErrorStatement($"PARSER: Illegal datatype.");
         }
-        return new VariableDeclareStatement(symbolInfo);
+        return new VariableDeclareStatement(type, variableName.Value);
     }
 
     private ARLangStatementBase ParsePrintStatement()
@@ -164,7 +157,11 @@ public class Parser(IList<Token> tokens)
         ARLangExpressionBase expression = ParseExpression();
         if (tokens[index].Type != TokenType.SEMICOLON)
         {
-            return new ErrorStatement("Semicolon missing.");
+            if (expression is ErrorExpression errorExpression)
+            {
+                return new ErrorStatement(errorExpression.Msg);
+            }
+            return new ErrorStatement($"PARSER: Semicolon missing.");
         }
         index++;
         return new PrintStatement(expression);
@@ -176,7 +173,11 @@ public class Parser(IList<Token> tokens)
         ARLangExpressionBase expression = ParseExpression();
         if (tokens[index].Type != TokenType.SEMICOLON)
         {
-            return new ErrorStatement("Semicolon missing.");
+            if (expression is ErrorExpression errorExpression)
+            {
+                return new ErrorStatement(errorExpression.Msg);
+            }
+            return new ErrorStatement($"PARSER: Semicolon missing.");
         }
         index++;
         return new PrintLineStatement(expression);
@@ -192,7 +193,7 @@ public class Parser(IList<Token> tokens)
             tokenType = tokens[index].Type;
             index++;
             ARLangExpressionBase rightExp = ParseRelationalExpression();
-            return tokenType switch
+            leftExp = tokenType switch
             {
                 TokenType.AND => new LogicalAndExpression(leftExp, rightExp),
                 TokenType.OR => new LogicalOrExpression(leftExp, rightExp),
@@ -302,12 +303,8 @@ public class Parser(IList<Token> tokens)
         }
         if (tokens[index].Type == TokenType.UNQUOTED_STRING)
         {
-            var union = SymbolInfoTable.Get(tokens[index++].Value); //Supressing null because lexer will set symbol name for unquoted strings. Its safe.
-            return union.Match<ARLangExpressionBase>(
-                none => new ErrorExpression("Variable not found"),
-                symbolInfo => new VariableExpression(symbolInfo)
-                );
+            return new VariableExpression(tokens[index++].Value);
         }
-        return new ErrorExpression("Illegal token");
+        return new ErrorExpression($"PARSER: Illegal token 'Type={tokens[index].Type}', 'Value={tokens[index].Value}'");
     }
 }

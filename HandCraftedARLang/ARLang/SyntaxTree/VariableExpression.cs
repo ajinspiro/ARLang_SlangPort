@@ -1,5 +1,3 @@
-using ARLang.Core;
-
 namespace ARLang.SyntaxTree;
 
-public record VariableExpression(SymbolInfo SymbolInfo) : ARLangExpressionBase;
+public record VariableExpression(string Name) : ARLangExpressionBase;

@@ -2,4 +2,4 @@ using ARLang.Core;
 
 namespace ARLang.SyntaxTree;
 
-public record VariableDeclareStatement(SymbolInfo SymbolInfo) : ARLangStatementBase;
+public record VariableDeclareStatement(DataType DataType, string Name) : ARLangStatementBase;

@@ -143,6 +143,20 @@ public class Lexer
                     }
                     break;
                 }
+            case '&':
+                {
+                    if (expressionString[index + 1] == '&')
+                    {
+                        tok = TokenType.AND;
+                        index += 2;
+                    }
+                    else
+                    {
+                        tok = TokenType.ILLEGAL_TOKEN;
+                        index++;
+                    }
+                    break;
+                }
             case '!':
                 tok = TokenType.NOT;
                 index++;
