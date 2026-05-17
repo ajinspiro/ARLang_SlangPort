@@ -1,6 +1,4 @@
-using ARLang.Core;
 using ARLang.SyntaxTree;
-using OneOf.Types;
 
 namespace ARLang.Visitors.Interpreter;
 
@@ -84,11 +82,6 @@ public class Interpreter : IVisitorBase
     private void VisitAssignmentStatement(AssignmentStatement assignmentStatement)
     {
         ARLangExpressionBase visitedExpression = VisitExpression(assignmentStatement.Expression);
-        // var union = RuntimeScope.Get(assignmentStatement.SymbolInfo.SymbolName);
-        // if (union.IsT0)
-        // {
-        //     throw new Exception("Variable entry not found.");
-        // }
 
         ARLangValue value = visitedExpression switch
         {
@@ -199,17 +192,6 @@ public class Interpreter : IVisitorBase
         };
     }
 
-    // private ARLangExpressionBase VisitLogicalOrSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
-    // {
-    //     ARLangExpressionBase bool1 = VisitExpression(r1);
-    //     ARLangExpressionBase bool2 = VisitExpression(r2);
-    //     return (bool1, bool2) switch
-    //     {
-    //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value || b2.Value), // OR
-    //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
-    //     };
-    // }
-
     private ARLangExpressionBase VisitLogicalAndExpression(LogicalAndExpression e)
     {
         var result1 = VisitExpression(e.Expression1);
@@ -221,17 +203,6 @@ public class Interpreter : IVisitorBase
             _ => new ErrorExpression("INTERPRETER: Invalid logical AND operation")
         };
     }
-
-    // private ARLangExpressionBase VisitLogicalAndSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
-    // {
-    //     ARLangExpressionBase bool1 = VisitExpression(r1);
-    //     ARLangExpressionBase bool2 = VisitExpression(r2);
-    //     return (bool1, bool2) switch
-    //     {
-    //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value && b2.Value), // AND
-    //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
-    //     };
-    // }
 
     private ARLangExpressionBase VisitRelationalNeqExpression(RelationalNeqExpression e)
     {
