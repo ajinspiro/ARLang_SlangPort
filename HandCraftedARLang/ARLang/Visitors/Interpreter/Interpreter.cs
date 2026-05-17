@@ -1,409 +1,401 @@
-// using ARLang.Core;
-// using ARLang.SyntaxTree;
-// using OneOf.Types;
+using ARLang.Core;
+using ARLang.SyntaxTree;
+using OneOf.Types;
 
-// namespace ARLang.Visitors.Interpreter;
+namespace ARLang.Visitors.Interpreter;
 
-// public class Interpreter : IVisitorBase
-// {
-//     private readonly SymbolInfoTable SymbolInfoTable = new();
+public class Interpreter : IVisitorBase
+{
+    private readonly RuntimeScope RuntimeScope = new();
 
-//     public void Visit(List<ARLangStatementBase> statements)
-//     {
-//         foreach (var statement in statements)
-//         {
-//             VisitStatement(statement);
-//         }
-//     }
+    public void Visit(List<ARLangStatementBase> statements)
+    {
+        foreach (var statement in statements)
+        {
+            VisitStatement(statement);
+        }
+    }
 
-//     private void VisitStatement(ARLangStatementBase statement)
-//     {
-//         if (statement is PrintLineStatement printlineStatement)
-//         {
-//             VisitPrintLineStatement(printlineStatement);
-//         }
-//         else if (statement is PrintStatement printStatement)
-//         {
-//             VisitPrintStatement(printStatement);
-//         }
-//         else if (statement is VariableDeclareStatement variableDeclareStatement)
-//         {
-//             VisitVariableDeclareStatement(variableDeclareStatement);
-//         }
-//         else if (statement is AssignmentStatement assignmentStatement)
-//         {
-//             VisitAssignmentStatement(assignmentStatement);
-//         }
-//         else if (statement is IfStatement ifStatement)
-//         {
-//             VisitIfStatement(ifStatement);
-//         }
-//         else if (statement is WhileStatement whileStatement)
-//         {
-//             VisitWhileStatement(whileStatement);
-//         }
-//     }
+    private void VisitStatement(ARLangStatementBase statement)
+    {
+        if (statement is PrintLineStatement printlineStatement)
+        {
+            VisitPrintLineStatement(printlineStatement);
+        }
+        else if (statement is PrintStatement printStatement)
+        {
+            VisitPrintStatement(printStatement);
+        }
+        else if (statement is VariableDeclareStatement variableDeclareStatement)
+        {
+            VisitVariableDeclareStatement(variableDeclareStatement);
+        }
+        else if (statement is AssignmentStatement assignmentStatement)
+        {
+            VisitAssignmentStatement(assignmentStatement);
+        }
+        else if (statement is IfStatement ifStatement)
+        {
+            VisitIfStatement(ifStatement);
+        }
+        else if (statement is WhileStatement whileStatement)
+        {
+            VisitWhileStatement(whileStatement);
+        }
+    }
 
-//     private void VisitWhileStatement(WhileStatement whileStatement)
-//     {
-//         while (true)
-//         {
-//             ARLangExpressionBase conditionValue = VisitExpression(whileStatement.Condition);
-//             var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
-//             if (conditionValueBoolean.Value)
-//             {
-//                 Visit(whileStatement.Body);
-//             }
-//             else
-//             {
-//                 break;
-//             }
-//         }
-//     }
+    private void VisitWhileStatement(WhileStatement whileStatement)
+    {
+        while (true)
+        {
+            ARLangExpressionBase conditionValue = VisitExpression(whileStatement.Condition);
+            var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
+            if (conditionValueBoolean.Value)
+            {
+                Visit(whileStatement.Body);
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
 
-//     private void VisitIfStatement(IfStatement ifStatement)
-//     {
-//         ARLangExpressionBase conditionValue = VisitExpression(ifStatement.Condition);
-//         var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
-//         if (conditionValueBoolean.Value)
-//         {
-//             Visit(ifStatement.ThenBranch);
-//             return;
-//         }
-//         else if (ifStatement.ElseBranch is not null)
-//         {
-//             Visit(ifStatement.ElseBranch);
-//         }
-//     }
+    private void VisitIfStatement(IfStatement ifStatement)
+    {
+        ARLangExpressionBase conditionValue = VisitExpression(ifStatement.Condition);
+        var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
+        if (conditionValueBoolean.Value)
+        {
+            Visit(ifStatement.ThenBranch);
+            return;
+        }
+        else if (ifStatement.ElseBranch is not null)
+        {
+            Visit(ifStatement.ElseBranch);
+        }
+    }
 
-//     private void VisitVariableDeclareStatement(VariableDeclareStatement variableDeclareStatement)
-//     {
-//         SymbolInfoTable.TryAdd(variableDeclareStatement.SymbolInfo);
-//     }
+    private void VisitVariableDeclareStatement(VariableDeclareStatement variableDeclareStatement)
+    {
+        RuntimeScope.Declare(variableDeclareStatement.Name, variableDeclareStatement.DataType);
+    }
 
-//     private void VisitAssignmentStatement(AssignmentStatement assignmentStatement)
-//     {
-//         if (assignmentStatement.SymbolInfo.SymbolName is null)
-//         {
-//             throw new Exception("Variable name not found to assign.");
-//         }
-//         ARLangExpressionBase visitedExpression = VisitExpression(assignmentStatement.Expression);
-//         var union = SymbolInfoTable.Get(assignmentStatement.SymbolInfo.SymbolName);
-//         if (union.IsT0)
-//         {
-//             throw new Exception("Variable entry not found.");
-//         }
-//         ARLangValue value = visitedExpression switch
-//         {
-//             BooleanConstantExpression b => b.Value,
-//             NumericConstantExpression n => n.Value,
-//             StringLiteralExpression s => s.Value,
-//             _ => new None()
-//         };
-//         SymbolInfoTable.TryAssign(new SymbolInfo(TokenType.UNQUOTED_STRING, value, assignmentStatement.SymbolInfo.SymbolName));
-//     }
+    private void VisitAssignmentStatement(AssignmentStatement assignmentStatement)
+    {
+        ARLangExpressionBase visitedExpression = VisitExpression(assignmentStatement.Expression);
+        // var union = RuntimeScope.Get(assignmentStatement.SymbolInfo.SymbolName);
+        // if (union.IsT0)
+        // {
+        //     throw new Exception("Variable entry not found.");
+        // }
 
-//     private void VisitPrintLineStatement(PrintLineStatement printlineStatement)
-//     {
-//         ARLangExpressionBase exp = VisitExpression(printlineStatement.Expression);
-//         if (exp is NumericConstantExpression num)
-//         {
-//             Console.WriteLine(num.Value);
-//         }
-//         else if (exp is BooleanConstantExpression boolean)
-//         {
-//             Console.WriteLine(boolean.Value);
-//         }
-//         else if (exp is StringLiteralExpression stringVal)
-//         {
-//             Console.WriteLine(stringVal.Value);
-//         }
-//         else if (exp is ErrorExpression error)
-//         {
-//             Console.Error.WriteLine(error.Msg);
-//         }
-//         else
-//         {
-//             Console.Error.WriteLine("Invalid type of expression received in printline statement");
-//         }
-//     }
+        ARLangValue value = visitedExpression switch
+        {
+            BooleanConstantExpression b => b.Value,
+            NumericConstantExpression n => n.Value,
+            StringLiteralExpression s => s.Value,
+            _ => throw new Exception("INTERPRETER: Not possible.")
+        };
+        RuntimeScope.Assign(assignmentStatement.Variable.Name, value);
+    }
 
-//     private void VisitPrintStatement(PrintStatement printStatement)
-//     {
-//         ARLangExpressionBase exp = VisitExpression(printStatement.Expression);
-//         if (exp is NumericConstantExpression num)
-//         {
-//             Console.Write(num.Value);
-//         }
-//         else if (exp is BooleanConstantExpression boolean)
-//         {
-//             Console.Write(boolean.Value);
-//         }
-//         else if (exp is StringLiteralExpression stringVal)
-//         {
-//             Console.Write(stringVal.Value);
-//         }
-//         else if (exp is ErrorExpression error)
-//         {
-//             Console.Error.WriteLine(error.Msg);
-//         }
-//         else
-//         {
-//             Console.Error.WriteLine("Invalid type of expression received in printline statement");
-//         }
-//     }
+    private void VisitPrintLineStatement(PrintLineStatement printlineStatement)
+    {
+        ARLangExpressionBase exp = VisitExpression(printlineStatement.Expression);
+        if (exp is NumericConstantExpression num)
+        {
+            Console.WriteLine(num.Value);
+        }
+        else if (exp is BooleanConstantExpression boolean)
+        {
+            Console.WriteLine(boolean.Value);
+        }
+        else if (exp is StringLiteralExpression stringVal)
+        {
+            Console.WriteLine(stringVal.Value);
+        }
+        else if (exp is ErrorExpression error)
+        {
+            Console.Error.WriteLine(error.Msg);
+        }
+        else
+        {
+            Console.Error.WriteLine("Invalid type of expression received in printline statement");
+        }
+    }
 
-//     private ARLangExpressionBase VisitExpression(ARLangExpressionBase expression)
-//     {
-//         return expression switch
-//         {
-//             AdditionExpression e => VisitAddition(e),
-//             SubtractionExpression e => VisitSubtraction(e),
-//             MultiplicationExpression e => VisitMultiplication(e),
-//             DivisionExpression e => VisitDivision(e),
-//             UnaryPlusExpression e => VisitUnaryPlus(e),
-//             UnaryMinusExpression e => VisitUnaryMinus(e),
-//             NumericConstantExpression e => e,
-//             BooleanConstantExpression e => e,
-//             StringLiteralExpression e => e,
-//             VariableExpression e => VisitVariableAccessExpression(e),
-//             RelationalEqExpression e => VisitRelationalEqExpression(e),
-//             RelationalGtExpression e => VisitRelationalGtExpression(e),
-//             RelationalLtExpression e => VisitRelationalLtExpression(e),
-//             RelationalGteExpression e => VisitRelationalGteExpression(e),
-//             RelationalLteExpression e => VisitRelationalLteExpression(e),
-//             RelationalNeqExpression e => VisitRelationalNeqExpression(e),
-//             LogicalAndExpression e => VisitLogicalAndExpression(e),
-//             LogicalOrExpression e => VisitLogicalOrExpression(e),
-//             LogicalNotExpression e => VisitLogicalNotExpression(e),
-//             _ => new ErrorExpression("Invalid expression")
-//         };
-//     }
+    private void VisitPrintStatement(PrintStatement printStatement)
+    {
+        ARLangExpressionBase exp = VisitExpression(printStatement.Expression);
+        if (exp is NumericConstantExpression num)
+        {
+            Console.Write(num.Value);
+        }
+        else if (exp is BooleanConstantExpression boolean)
+        {
+            Console.Write(boolean.Value);
+        }
+        else if (exp is StringLiteralExpression stringVal)
+        {
+            Console.Write(stringVal.Value);
+        }
+        else if (exp is ErrorExpression error)
+        {
+            Console.Error.WriteLine(error.Msg);
+        }
+        else
+        {
+            Console.Error.WriteLine("Invalid type of expression received in printline statement");
+        }
+    }
 
-//     private ARLangExpressionBase VisitLogicalNotExpression(LogicalNotExpression e)
-//     {
-//         ARLangExpressionBase expression = VisitExpression(e.Expression);
-//         return expression switch
-//         {
-//             BooleanConstantExpression b => new BooleanConstantExpression(!b.Value),
-//             _ => new ErrorExpression("Invalid expression")
-//         };
-//     }
+    private ARLangExpressionBase VisitExpression(ARLangExpressionBase expression)
+    {
+        return expression switch
+        {
+            AdditionExpression e => VisitAddition(e),
+            SubtractionExpression e => VisitSubtraction(e),
+            MultiplicationExpression e => VisitMultiplication(e),
+            DivisionExpression e => VisitDivision(e),
+            UnaryPlusExpression e => VisitUnaryPlus(e),
+            UnaryMinusExpression e => VisitUnaryMinus(e),
+            NumericConstantExpression e => e,
+            BooleanConstantExpression e => e,
+            StringLiteralExpression e => e,
+            VariableExpression e => VisitVariableAccessExpression(e),
+            RelationalEqExpression e => VisitRelationalEqExpression(e),
+            RelationalGtExpression e => VisitRelationalGtExpression(e),
+            RelationalLtExpression e => VisitRelationalLtExpression(e),
+            RelationalGteExpression e => VisitRelationalGteExpression(e),
+            RelationalLteExpression e => VisitRelationalLteExpression(e),
+            RelationalNeqExpression e => VisitRelationalNeqExpression(e),
+            LogicalAndExpression e => VisitLogicalAndExpression(e),
+            LogicalOrExpression e => VisitLogicalOrExpression(e),
+            LogicalNotExpression e => VisitLogicalNotExpression(e),
+            _ => new ErrorExpression("Invalid expression")
+        };
+    }
 
-//     private ARLangExpressionBase VisitLogicalOrExpression(LogicalOrExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
+    private ARLangExpressionBase VisitLogicalNotExpression(LogicalNotExpression e)
+    {
+        ARLangExpressionBase expression = VisitExpression(e.Expression);
+        return expression switch
+        {
+            BooleanConstantExpression b => new BooleanConstantExpression(!b.Value),
+            _ => new ErrorExpression("Invalid expression")
+        };
+    }
 
-//         return (result1, result2) switch
-//         {
-//             (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value || b2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid logical AND operation")
-//         };
-//     }
+    private ARLangExpressionBase VisitLogicalOrExpression(LogicalOrExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
 
-//     // private ARLangExpressionBase VisitLogicalOrSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
-//     // {
-//     //     ARLangExpressionBase bool1 = VisitExpression(r1);
-//     //     ARLangExpressionBase bool2 = VisitExpression(r2);
-//     //     return (bool1, bool2) switch
-//     //     {
-//     //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value || b2.Value), // OR
-//     //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
-//     //     };
-//     // }
+        return (result1, result2) switch
+        {
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value || b2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid logical AND operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitLogicalAndExpression(LogicalAndExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
+    // private ARLangExpressionBase VisitLogicalOrSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
+    // {
+    //     ARLangExpressionBase bool1 = VisitExpression(r1);
+    //     ARLangExpressionBase bool2 = VisitExpression(r2);
+    //     return (bool1, bool2) switch
+    //     {
+    //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value || b2.Value), // OR
+    //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
+    //     };
+    // }
 
-//         return (result1, result2) switch
-//         {
-//             (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value && b2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid logical AND operation")
-//         };
-//     }
+    private ARLangExpressionBase VisitLogicalAndExpression(LogicalAndExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
 
-//     // private ARLangExpressionBase VisitLogicalAndSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
-//     // {
-//     //     ARLangExpressionBase bool1 = VisitExpression(r1);
-//     //     ARLangExpressionBase bool2 = VisitExpression(r2);
-//     //     return (bool1, bool2) switch
-//     //     {
-//     //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value && b2.Value), // AND
-//     //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
-//     //     };
-//     // }
+        return (result1, result2) switch
+        {
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value && b2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid logical AND operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitRelationalNeqExpression(RelationalNeqExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
-//         return (result1, result2) switch
-//         {
-//             (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value != n2.Value),
-//             (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value != b2.Value),
-//             (StringLiteralExpression s1, StringLiteralExpression s2) => new BooleanConstantExpression(s1.Value != s2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid relational NEQ operation")
-//         };
-//     }
+    // private ARLangExpressionBase VisitLogicalAndSubExpressions(RelationalExpressionBase r1, RelationalExpressionBase r2)
+    // {
+    //     ARLangExpressionBase bool1 = VisitExpression(r1);
+    //     ARLangExpressionBase bool2 = VisitExpression(r2);
+    //     return (bool1, bool2) switch
+    //     {
+    //         (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value && b2.Value), // AND
+    //         _ => new ErrorExpression("INTERPRETER: Invalid relational operation.")
+    //     };
+    // }
 
-//     private ARLangExpressionBase VisitRelationalLteExpression(RelationalLteExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
-//         return (result1, result2) switch
-//         {
-//             (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value <= n2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid relational LTE operation")
-//         };
-//     }
+    private ARLangExpressionBase VisitRelationalNeqExpression(RelationalNeqExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value != n2.Value),
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value != b2.Value),
+            (StringLiteralExpression s1, StringLiteralExpression s2) => new BooleanConstantExpression(s1.Value != s2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational NEQ operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitRelationalGteExpression(RelationalGteExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
-//         return (result1, result2) switch
-//         {
-//             (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value >= n2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid relational GTE operation")
-//         };
-//     }
+    private ARLangExpressionBase VisitRelationalLteExpression(RelationalLteExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value <= n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational LTE operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitRelationalLtExpression(RelationalLtExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
-//         return (result1, result2) switch
-//         {
-//             (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value < n2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid relational LT operation")
-//         };
-//     }
+    private ARLangExpressionBase VisitRelationalGteExpression(RelationalGteExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value >= n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational GTE operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitRelationalGtExpression(RelationalGtExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
-//         return (result1, result2) switch
-//         {
-//             (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value > n2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid relational GT operation")
-//         };
-//     }
+    private ARLangExpressionBase VisitRelationalLtExpression(RelationalLtExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value < n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational LT operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitRelationalEqExpression(RelationalEqExpression e)
-//     {
-//         var result1 = VisitExpression(e.Expression1);
-//         var result2 = VisitExpression(e.Expression2);
-//         return (result1, result2) switch
-//         {
-//             (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value == n2.Value),
-//             (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value == b2.Value),
-//             (StringLiteralExpression s1, StringLiteralExpression s2) => new BooleanConstantExpression(s1.Value == s2.Value),
-//             _ => new ErrorExpression("INTERPRETER: Invalid relational EQ operation")
-//         };
-//     }
+    private ARLangExpressionBase VisitRelationalGtExpression(RelationalGtExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value > n2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational GT operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitVariableAccessExpression(VariableExpression e)
-//     {
-//         if (e.SymbolInfo.SymbolName is null)
-//         {
-//             return new ErrorExpression("Symbolname was null.");
-//         }
-//         var union = SymbolInfoTable.Get(e.SymbolInfo.SymbolName);
-//         if (union.IsT0)
-//         {
-//             return new ErrorExpression("Symboltable did not contain an entry for the variable");
-//         }
-//         return union.AsT1.Value.Match<ARLangExpressionBase>(
-//             none => new ErrorExpression("Uninitialized variable was used."),
-//             number => new NumericConstantExpression(number),
-//             stringVal => new StringLiteralExpression(stringVal),
-//             boolVal => new BooleanConstantExpression(boolVal)
-//         );
-//     }
+    private ARLangExpressionBase VisitRelationalEqExpression(RelationalEqExpression e)
+    {
+        var result1 = VisitExpression(e.Expression1);
+        var result2 = VisitExpression(e.Expression2);
+        return (result1, result2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new BooleanConstantExpression(n1.Value == n2.Value),
+            (BooleanConstantExpression b1, BooleanConstantExpression b2) => new BooleanConstantExpression(b1.Value == b2.Value),
+            (StringLiteralExpression s1, StringLiteralExpression s2) => new BooleanConstantExpression(s1.Value == s2.Value),
+            _ => new ErrorExpression("INTERPRETER: Invalid relational EQ operation")
+        };
+    }
 
-//     private ARLangExpressionBase VisitAddition(AdditionExpression exp)
-//     {
-//         var value1 = VisitExpression(exp.Expression1);
-//         var value2 = VisitExpression(exp.Expression2);
-//         ARLangExpressionBase expReturn = (value1, value2) switch
-//         {
-//             (NumericConstantExpression n1, NumericConstantExpression n2) => new NumericConstantExpression(n1.Value + n2.Value),
-//             (StringLiteralExpression s1, StringLiteralExpression s2) => new StringLiteralExpression(string.Concat(s1.Value, s2.Value)),
-//             _ => new ErrorExpression("Invalid expression passed to addition operator.")
-//         };
-//         return expReturn;
-//     }
+    private ARLangExpressionBase VisitVariableAccessExpression(VariableExpression e)
+    {
+        var union = RuntimeScope.Lookup(e.Name);
+        if (union.IsT0)
+        {
+            return new ErrorExpression("INTERPRETER: Runtime environment did not contain an entry for the variable");
+        }
+        return union.AsT1.Value.Match<ARLangExpressionBase>(
+            number => new NumericConstantExpression(number),
+            stringVal => new StringLiteralExpression(stringVal),
+            boolVal => new BooleanConstantExpression(boolVal)
+        );
+    }
 
-//     private ARLangExpressionBase VisitSubtraction(SubtractionExpression exp)
-//     {
-//         var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
-//         var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
-//         if (value1 is null)
-//         {
-//             return new ErrorExpression("Expression 1 failed to evaluate.");
-//         }
-//         if (value2 is null)
-//         {
-//             return new ErrorExpression("Expression 2 failed to evaluate.");
-//         }
-//         return new NumericConstantExpression(value1.Value - value2.Value);
-//     }
+    private ARLangExpressionBase VisitAddition(AdditionExpression exp)
+    {
+        var value1 = VisitExpression(exp.Expression1);
+        var value2 = VisitExpression(exp.Expression2);
+        ARLangExpressionBase expReturn = (value1, value2) switch
+        {
+            (NumericConstantExpression n1, NumericConstantExpression n2) => new NumericConstantExpression(n1.Value + n2.Value),
+            (StringLiteralExpression s1, StringLiteralExpression s2) => new StringLiteralExpression(string.Concat(s1.Value, s2.Value)),
+            _ => new ErrorExpression("Invalid expression passed to addition operator.")
+        };
+        return expReturn;
+    }
 
-//     private ARLangExpressionBase VisitMultiplication(MultiplicationExpression exp)
-//     {
-//         var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
-//         var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
-//         if (value1 is null)
-//         {
-//             return new ErrorExpression("Expression 1 failed to evaluate.");
-//         }
-//         if (value2 is null)
-//         {
-//             return new ErrorExpression("Expression 2 failed to evaluate.");
-//         }
-//         return new NumericConstantExpression(value1.Value * value2.Value);
-//     }
+    private ARLangExpressionBase VisitSubtraction(SubtractionExpression exp)
+    {
+        var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
+        var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
+        if (value1 is null)
+        {
+            return new ErrorExpression("Expression 1 failed to evaluate.");
+        }
+        if (value2 is null)
+        {
+            return new ErrorExpression("Expression 2 failed to evaluate.");
+        }
+        return new NumericConstantExpression(value1.Value - value2.Value);
+    }
 
-//     private ARLangExpressionBase VisitDivision(DivisionExpression exp)
-//     {
-//         var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
-//         var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
-//         if (value1 is null)
-//         {
-//             return new ErrorExpression("Expression 1 failed to evaluate.");
-//         }
-//         if (value2 is null)
-//         {
-//             return new ErrorExpression("Expression 2 failed to evaluate.");
-//         }
-//         if (value2.Value is 0)
-//         {
-//             return new ErrorExpression("Division by zero is undefined.");
-//         }
-//         return new NumericConstantExpression(value1.Value / value2.Value);
-//     }
+    private ARLangExpressionBase VisitMultiplication(MultiplicationExpression exp)
+    {
+        var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
+        var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
+        if (value1 is null)
+        {
+            return new ErrorExpression("Expression 1 failed to evaluate.");
+        }
+        if (value2 is null)
+        {
+            return new ErrorExpression("Expression 2 failed to evaluate.");
+        }
+        return new NumericConstantExpression(value1.Value * value2.Value);
+    }
 
-//     private ARLangExpressionBase VisitUnaryPlus(UnaryPlusExpression exp)
-//     {
-//         var value = VisitExpression(exp.Expression) as NumericConstantExpression;
-//         if (value is null)
-//         {
-//             return new ErrorExpression("Expression failed to evaluate.");
-//         }
-//         return value; // Does nothing to the value
-//     }
+    private ARLangExpressionBase VisitDivision(DivisionExpression exp)
+    {
+        var value1 = VisitExpression(exp.Expression1) as NumericConstantExpression;
+        var value2 = VisitExpression(exp.Expression2) as NumericConstantExpression;
+        if (value1 is null)
+        {
+            return new ErrorExpression("Expression 1 failed to evaluate.");
+        }
+        if (value2 is null)
+        {
+            return new ErrorExpression("Expression 2 failed to evaluate.");
+        }
+        if (value2.Value is 0)
+        {
+            return new ErrorExpression("Division by zero is undefined.");
+        }
+        return new NumericConstantExpression(value1.Value / value2.Value);
+    }
 
-//     private ARLangExpressionBase VisitUnaryMinus(UnaryMinusExpression exp)
-//     {
-//         var value = VisitExpression(exp.Expression) as NumericConstantExpression;
-//         if (value is null)
-//         {
-//             return new ErrorExpression("Expression failed to evaluate.");
-//         }
-//         return new NumericConstantExpression(-value.Value); // Negate the value
-//     }
-// }
+    private ARLangExpressionBase VisitUnaryPlus(UnaryPlusExpression exp)
+    {
+        var value = VisitExpression(exp.Expression) as NumericConstantExpression;
+        if (value is null)
+        {
+            return new ErrorExpression("Expression failed to evaluate.");
+        }
+        return value; // Does nothing to the value
+    }
+
+    private ARLangExpressionBase VisitUnaryMinus(UnaryMinusExpression exp)
+    {
+        var value = VisitExpression(exp.Expression) as NumericConstantExpression;
+        if (value is null)
+        {
+            return new ErrorExpression("Expression failed to evaluate.");
+        }
+        return new NumericConstantExpression(-value.Value); // Negate the value
+    }
+}

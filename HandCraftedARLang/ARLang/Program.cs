@@ -85,15 +85,16 @@ FUNCTION BOOLEAN MAIN()
    ENDIF
 END
 ");
-TestLexerStub(@"
+TestLexer(@"
 BOOLEAN a;
 BOOLEAN b;
 BOOLEAN c;
 BOOLEAN sum;
 a = TRUE;
-b = TRUE;
+b = FALSE;
 c = TRUE;
 sum = a && b && c;
+PRINTLINE sum;
 ");
 TestLexerStub(@"
 WHILE(a < 10)
@@ -110,14 +111,14 @@ ELSE
 ENDIF
 PRINTLINE a;
 ");
-TestLexer(@"
+TestLexerStub(@"
 NUMERIC g*;
 ");
 static void TestLexerStub(params string[] expressionStrings) { }
 static void TestLexer(params string[] expressionStrings)
 {
     Lexer lexer = new();
-    //Interpreter interpreter = new();
+    Interpreter interpreter = new();
     foreach (var expressionString in expressionStrings)
     {
         Console.WriteLine($"Performing lexical analysis on {expressionString}");
@@ -131,10 +132,10 @@ static void TestLexer(params string[] expressionStrings)
         List<ARLangStatementBase> syntaxTrees = parser.Parse();
         if (syntaxTrees.Count == 1 && syntaxTrees.First() is ErrorStatement errorStatement)
         {
-            Console.Error.WriteLine($"{errorStatement.Msg}");
+            Console.Error.WriteLine(errorStatement.Msg);
             return;
         }
         // typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
-        // interpreter.Visit(syntaxTrees);
+        interpreter.Visit(syntaxTrees);
     }
 }
