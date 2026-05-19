@@ -112,10 +112,14 @@ ENDIF
 PRINTLINE a;
 ");
 TestLexer(@"
-FUNCTION NUMERIC g()  
+FUNCTION NUMERIC Main2()  
+    return 123; 
+END
+
+FUNCTION NUMERIC Main()  
     NUMERIC a; NUMERIC b;
-    a = 12; b = 3;
-    PRINTLINE a+b;
+    a = Main2();
+    PRINTLINE a;
 END
 ");
 static void TestLexerStub(params string[] expressionStrings) { }

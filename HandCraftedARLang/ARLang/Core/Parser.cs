@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using ARLang.SyntaxTree;
 
 namespace ARLang.Core;
@@ -127,9 +128,22 @@ public class Parser(IList<Token> tokens)
             { Type: TokenType.UNQUOTED_STRING } => ParseAssignmentStatement(),
             { Type: TokenType.IF } => ParseIfStatement(),
             { Type: TokenType.WHILE } => ParseWhileStatement(),
+            { Type: TokenType.RETURN } => ParseReturnStatement(),
             { Type: TokenType.ILLEGAL_TOKEN } => new ErrorStatement("Illegal token encountered."),
             _ => throw new Exception()
         };
+    }
+
+    private ARLangStatementBase ParseReturnStatement()
+    {
+        index++;
+        ARLangExpressionBase value = ParseExpression();
+        if (tokens[index].Type != TokenType.SEMICOLON)
+        {
+            return new ErrorStatement("PARSER: Semicolon missing.");
+        }
+        index++;
+        return new ReturnStatement(value);
     }
 
     private ARLangStatementBase ParseWhileStatement()
@@ -384,8 +398,39 @@ public class Parser(IList<Token> tokens)
         }
         if (tokens[index].Type == TokenType.UNQUOTED_STRING)
         {
-            return new VariableExpression(tokens[index++].Value);
+            string value = tokens[index].Value;
+            index++;
+            if (tokens[index].Type == TokenType.OPEN_PARENTHESIS) // is function call ?
+            {
+                List<ARLangExpressionBase> arguments = ParseArgumentList();
+                return new FunctionCallExpression(value, arguments);
+            }
+            else
+            {
+                return new VariableExpression(value);
+            }
         }
         return new ErrorExpression($"PARSER: Illegal token 'Type={tokens[index].Type}', 'Value={tokens[index].Value}'");
+    }
+
+    private List<ARLangExpressionBase> ParseArgumentList()
+    {
+        index++; // consume open parenthesis
+        List<ARLangExpressionBase> arguments = [];
+        while (tokens[index].Type != TokenType.CLOSE_PARENTHESIS)
+        {
+            ARLangExpressionBase argument = ParseLogicalExpression();
+            arguments.Add(argument);
+            if (tokens[index].Type == TokenType.COMMA)
+            {
+                index++;
+            }
+            else
+            {
+                return [new ErrorExpression($"PARSER: Illegal token '{tokens[index]}' encountered while parsing argument list.")];
+            }
+        }
+        index++; // consume close parenthesis
+        return arguments;
     }
 }

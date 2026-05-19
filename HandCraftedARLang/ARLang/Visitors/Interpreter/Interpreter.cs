@@ -1,4 +1,5 @@
 using ARLang.SyntaxTree;
+using OneOf.Types;
 
 namespace ARLang.Visitors.Interpreter;
 
@@ -13,56 +14,77 @@ public class Interpreter : IVisitorBase
         VisitStatements(mainFunction.Body);
     }
 
-    private void VisitFunctionCall(FunctionDefinition function)
-    {
-        RuntimeScope newRuntimeScope = new(RuntimeScope);
-        RuntimeScope = newRuntimeScope;
-
-    }
-
-    private void VisitStatements(List<ARLangStatementBase> statements)
+    private Result VisitStatements(List<ARLangStatementBase> statements)
     {
         foreach (var statement in statements)
         {
-            VisitStatement(statement);
+            Result result = VisitStatement(statement);
+            if (result.IsSuccess)
+            {
+                continue;
+            }
+            else
+            {
+                return result;
+            }
         }
+        return new Success();
     }
 
-    private void VisitStatement(ARLangStatementBase statement)
+    private Result VisitStatement(ARLangStatementBase statement)
     {
         if (statement is PrintLineStatement printlineStatement)
         {
             VisitPrintLineStatement(printlineStatement);
+            return new Success();
         }
         else if (statement is PrintStatement printStatement)
         {
             VisitPrintStatement(printStatement);
+            return new Success();
         }
         else if (statement is VariableDeclareStatement variableDeclareStatement)
         {
             VisitVariableDeclareStatement(variableDeclareStatement);
+            return new Success();
         }
         else if (statement is AssignmentStatement assignmentStatement)
         {
             VisitAssignmentStatement(assignmentStatement);
+            return new Success();
         }
         else if (statement is IfStatement ifStatement)
         {
             VisitIfStatement(ifStatement);
+            return new Success();
         }
         else if (statement is WhileStatement whileStatement)
         {
             VisitWhileStatement(whileStatement);
+            return new Success();
         }
         else if (statement is ReturnStatement returnStatement)
         {
-            VisitReturnStatement(returnStatement);
+            ReturnResult result = VisitReturnStatement(returnStatement);
+            return result;
+        }
+        else
+        {
+            throw new Exception("INTERPRETER: Not possible.");
         }
     }
 
-    private void VisitReturnStatement(ReturnStatement returnStatement)
+    // private ARLangExpressionBase VisitFunctionCallExpression(FunctionDefinition function)
+    // {
+    //     RuntimeScope newRuntimeScope = new(RuntimeScope);
+    //     RuntimeScope = newRuntimeScope;
+    //     syntaxTree.Cast<FunctionDefinition>().First(f => f.Name == )
+    // }
+
+    private ReturnResult VisitReturnStatement(ReturnStatement returnStatement)
     {
-        VisitExpression(returnStatement.Expression);
+        var value = VisitExpression(returnStatement.Expression);
+        return new ReturnResult(value);
     }
 
     private void VisitWhileStatement(WhileStatement whileStatement)
