@@ -4,5 +4,5 @@ namespace ARLang.Visitors;
 
 public interface IVisitorBase
 {
-    public void Visit(List<ARLangStatementBase> statements);
+    public void Visit(List<ARLangDefinitionBase> syntaxTree);
 }

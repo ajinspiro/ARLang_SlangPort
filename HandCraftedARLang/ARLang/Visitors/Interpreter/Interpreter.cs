@@ -4,9 +4,23 @@ namespace ARLang.Visitors.Interpreter;
 
 public class Interpreter : IVisitorBase
 {
-    private readonly RuntimeScope RuntimeScope = new();
+    private RuntimeScope RuntimeScope = new();
+    private List<ARLangDefinitionBase> syntaxTree = [];
+    public void Visit(List<ARLangDefinitionBase> syntaxTree)
+    {
+        this.syntaxTree = syntaxTree;
+        var mainFunction = syntaxTree.Cast<FunctionDefinition>().First(x => x.Name.ToLowerInvariant() == "Main".ToLowerInvariant());
+        VisitStatements(mainFunction.Body);
+    }
 
-    public void Visit(List<ARLangStatementBase> statements)
+    private void VisitFunctionCall(FunctionDefinition function)
+    {
+        RuntimeScope newRuntimeScope = new(RuntimeScope);
+        RuntimeScope = newRuntimeScope;
+
+    }
+
+    private void VisitStatements(List<ARLangStatementBase> statements)
     {
         foreach (var statement in statements)
         {
@@ -40,6 +54,15 @@ public class Interpreter : IVisitorBase
         {
             VisitWhileStatement(whileStatement);
         }
+        else if (statement is ReturnStatement returnStatement)
+        {
+            VisitReturnStatement(returnStatement);
+        }
+    }
+
+    private void VisitReturnStatement(ReturnStatement returnStatement)
+    {
+        VisitExpression(returnStatement.Expression);
     }
 
     private void VisitWhileStatement(WhileStatement whileStatement)
@@ -50,7 +73,7 @@ public class Interpreter : IVisitorBase
             var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
             if (conditionValueBoolean.Value)
             {
-                Visit(whileStatement.Body);
+                VisitStatements(whileStatement.Body);
             }
             else
             {
@@ -65,12 +88,12 @@ public class Interpreter : IVisitorBase
         var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
         if (conditionValueBoolean.Value)
         {
-            Visit(ifStatement.ThenBranch);
+            VisitStatements(ifStatement.ThenBranch);
             return;
         }
         else if (ifStatement.ElseBranch is not null)
         {
-            Visit(ifStatement.ElseBranch);
+            VisitStatements(ifStatement.ElseBranch);
         }
     }
 

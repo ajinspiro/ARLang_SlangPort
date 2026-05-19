@@ -133,13 +133,13 @@ static void TestLexer(params string[] expressionStrings)
         }
         // TypeChecker typeChecker = new();
         Parser parser = new(tokens);
-        List<ARLangDefinitionBase> syntaxTrees = parser.Parse();
-        if (syntaxTrees.Count == 1 && syntaxTrees.First() is ErrorDefinition errorDefinition)
+        List<ARLangDefinitionBase> syntaxTree = parser.Parse();
+        if (syntaxTree.Count == 1 && syntaxTree.First() is ErrorDefinition errorDefinition)
         {
             Console.Error.WriteLine(errorDefinition.Msg);
             return;
         }
         // typeChecker.Visit(syntaxTrees); // Will throw if type checking fails and preverts execution
-        interpreter.Visit((syntaxTrees[0] as FunctionDefinition).Body);
+        interpreter.Visit(syntaxTree);
     }
 }
