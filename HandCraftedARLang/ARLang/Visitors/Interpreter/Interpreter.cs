@@ -56,17 +56,17 @@ public class Interpreter : IVisitorBase
         }
         else if (statement is IfStatement ifStatement)
         {
-            VisitIfStatement(ifStatement);
-            return new Success();
+            Result result = VisitIfStatement(ifStatement);
+            return result;
         }
         else if (statement is WhileStatement whileStatement)
         {
-            VisitWhileStatement(whileStatement);
-            return new Success();
+            Result result = VisitWhileStatement(whileStatement);
+            return result;
         }
         else if (statement is ReturnStatement returnStatement)
         {
-            ReturnResult result = VisitReturnStatement(returnStatement);
+            Result result = VisitReturnStatement(returnStatement);
             return result;
         }
         else
@@ -75,13 +75,13 @@ public class Interpreter : IVisitorBase
         }
     }
 
-    private ReturnResult VisitReturnStatement(ReturnStatement returnStatement)
+    private Result VisitReturnStatement(ReturnStatement returnStatement)
     {
         var value = VisitExpression(returnStatement.Expression);
         return new ReturnResult(value);
     }
 
-    private void VisitWhileStatement(WhileStatement whileStatement)
+    private Result VisitWhileStatement(WhileStatement whileStatement)
     {
         while (true)
         {
@@ -89,27 +89,41 @@ public class Interpreter : IVisitorBase
             var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
             if (conditionValueBoolean.Value)
             {
-                VisitStatements(whileStatement.Body);
+                Result result = VisitStatements(whileStatement.Body);
+                if (result.IsSuccess)
+                {
+                    continue;
+                }
+                else
+                {
+                    return result;
+                }
             }
             else
             {
                 break;
             }
         }
+        return new Success();
     }
 
-    private void VisitIfStatement(IfStatement ifStatement)
+    private Result VisitIfStatement(IfStatement ifStatement)
     {
         ARLangExpressionBase conditionValue = VisitExpression(ifStatement.Condition);
         var conditionValueBoolean = conditionValue as BooleanConstantExpression ?? throw new Exception("INTERPRETER: Condition evaluation did not produce boolean.");
         if (conditionValueBoolean.Value)
         {
-            VisitStatements(ifStatement.ThenBranch);
-            return;
+            Result result = VisitStatements(ifStatement.ThenBranch);
+            return result;
         }
         else if (ifStatement.ElseBranch is not null)
         {
-            VisitStatements(ifStatement.ElseBranch);
+            Result result = VisitStatements(ifStatement.ElseBranch);
+            return result;
+        }
+        else
+        {
+            return new Success();
         }
     }
 

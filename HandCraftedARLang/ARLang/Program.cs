@@ -72,10 +72,8 @@ FUNCTION NUMERIC Quad( NUMERIC a , NUMERIC b , NUMERIC c )
 END
 FUNCTION BOOLEAN MAIN()
    NUMERIC d;
-   d = Quad(1,1,1); // No roots
-   d= Quad(1,0-6,9); // Discriminant is zero
-   d= Quad(1,0-5,6); // Two roots are available
-
+   
+   d= Quad(1,5,6); // Discriminant is zero
    IF ( d == 0 ) then
          PRINT ""No Roots"";
    ELSE
@@ -85,6 +83,7 @@ FUNCTION BOOLEAN MAIN()
          PRINT  ""Two roots are available"";
        ENDIF
    ENDIF
+    
    RETURN FALSE;
 END
 ");
@@ -116,7 +115,14 @@ PRINTLINE a;
 ");
 TestLexerStub(@"
 FUNCTION NUMERIC Main2()  
-    return 124+1; 
+    NUMERIC n; NUMERIC m;
+    WHILE (n<10)
+        n=n+1;
+        PRINTLINE m;
+        return 10; 
+        m=50;
+        PRINTLINE m;
+    WEND
 END
 
 FUNCTION NUMERIC Main()  
