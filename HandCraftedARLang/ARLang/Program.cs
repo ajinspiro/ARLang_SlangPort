@@ -72,7 +72,9 @@ FUNCTION NUMERIC Quad( NUMERIC a , NUMERIC b , NUMERIC c )
 END
 FUNCTION BOOLEAN MAIN()
    NUMERIC d;
-   d= Quad(1,0-5,6);
+   d = Quad(1,1,1); // No roots
+   d= Quad(1,0-6,9); // Discriminant is zero
+   d= Quad(1,0-5,6); // Two roots are available
 
    IF ( d == 0 ) then
          PRINT ""No Roots"";
