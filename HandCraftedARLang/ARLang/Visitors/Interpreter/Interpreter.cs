@@ -1,3 +1,4 @@
+using ARLang.Core;
 using ARLang.SyntaxTree;
 using OneOf.Types;
 
@@ -73,13 +74,6 @@ public class Interpreter : IVisitorBase
             throw new Exception("INTERPRETER: Not possible.");
         }
     }
-
-    // private ARLangExpressionBase VisitFunctionCallExpression(FunctionDefinition function)
-    // {
-    //     RuntimeScope newRuntimeScope = new(RuntimeScope);
-    //     RuntimeScope = newRuntimeScope;
-    //     syntaxTree.Cast<FunctionDefinition>().First(f => f.Name == )
-    // }
 
     private ReturnResult VisitReturnStatement(ReturnStatement returnStatement)
     {
@@ -211,8 +205,38 @@ public class Interpreter : IVisitorBase
             LogicalAndExpression e => VisitLogicalAndExpression(e),
             LogicalOrExpression e => VisitLogicalOrExpression(e),
             LogicalNotExpression e => VisitLogicalNotExpression(e),
+            FunctionCallExpression e => VisitFunctionCallExpression(e),
             _ => new ErrorExpression("INTERPRETER: Invalid expression")
         };
+    }
+
+    private ARLangExpressionBase VisitFunctionCallExpression(FunctionCallExpression e)
+    {
+        RuntimeScope runtimScopeBackup = RuntimeScope;
+        RuntimeScope = new(RuntimeScope);
+        FunctionDefinition functionToCall = syntaxTree.Cast<FunctionDefinition>().First(fn => fn.Name == e.Name);
+        // Now, get arguments from FunctionCallExpression
+        List<ARLangExpressionBase> argumentValues = e.Arguments.Select(VisitExpression).ToList();
+        for (int i = 0; i < argumentValues.Count; i++)
+        {
+            (string parameterName, DataType parameterDataType) = functionToCall.Parameters[i];
+            RuntimeScope.Declare(parameterName, parameterDataType);
+            ARLangValue argument = argumentValues[i] switch
+            {
+                NumericConstantExpression ex => ex.Value,
+                BooleanConstantExpression ex => ex.Value,
+                StringLiteralExpression ex => ex.Value,
+                _ => throw new Exception("INTERPRETER: Not possible.")
+            };
+            RuntimeScope.Assign(parameterName, argument);
+        }
+        Result result = VisitStatements(functionToCall.Body);
+        RuntimeScope = runtimScopeBackup;
+        return result.Match(
+            error => throw new Exception("INTERPRETER: Executing function call failed."),
+            success => throw new Exception("INTERPRETER: Executing function call was success, but did not produce value."),
+            successWithValue => successWithValue.Value
+        );
     }
 
     private ARLangExpressionBase VisitLogicalNotExpression(LogicalNotExpression e)

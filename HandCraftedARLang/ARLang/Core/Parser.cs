@@ -8,13 +8,6 @@ public class Parser(IList<Token> tokens)
     private readonly IList<Token> tokens = tokens;
     private int index = 0;
 
-    // public List<ARLangStatementBase> Parse()
-    // {
-    //     var result = ParseStatementList();
-    //     index = 0; // reset parser instance
-    //     return result;
-    // }
-
     public List<ARLangDefinitionBase> Parse()
     {
         var result = ParseFunctionDefinitions();
@@ -424,10 +417,6 @@ public class Parser(IList<Token> tokens)
             if (tokens[index].Type == TokenType.COMMA)
             {
                 index++;
-            }
-            else
-            {
-                return [new ErrorExpression($"PARSER: Illegal token '{tokens[index]}' encountered while parsing argument list.")];
             }
         }
         index++; // consume close parenthesis

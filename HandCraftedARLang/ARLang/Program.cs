@@ -55,24 +55,24 @@ b=!FALSE;
 PRINTLINE b;
 "
 );
-TestLexerStub(@"
+TestLexer(@"
 FUNCTION NUMERIC Quad( NUMERIC a , NUMERIC b , NUMERIC c )
    NUMERIC n;
    n = b*b - 4*a*c;
    IF ( n < 0 ) THEN
-        return 0;
+        RETURN 0;
    ELSE 
      IF ( n == 0 ) THEN
-         return 1;
+         RETURN 1;
      ELSE
-         return 2;
+         RETURN 2;
      ENDIF
    ENDIF 
-   return 0;
+   RETURN 0;
 END
 FUNCTION BOOLEAN MAIN()
    NUMERIC d;
-   d= Quad(1,0-6,9);
+   d= Quad(1,0-5,6);
 
    IF ( d == 0 ) then
          PRINT ""No Roots"";
@@ -83,6 +83,7 @@ FUNCTION BOOLEAN MAIN()
          PRINT  ""Two roots are available"";
        ENDIF
    ENDIF
+   RETURN FALSE;
 END
 ");
 TestLexerStub(@"
@@ -111,13 +112,13 @@ ELSE
 ENDIF
 PRINTLINE a;
 ");
-TestLexer(@"
+TestLexerStub(@"
 FUNCTION NUMERIC Main2()  
-    return 123; 
+    return 124+1; 
 END
 
 FUNCTION NUMERIC Main()  
-    NUMERIC a; NUMERIC b;
+    NUMERIC a;
     a = Main2();
     PRINTLINE a;
 END
