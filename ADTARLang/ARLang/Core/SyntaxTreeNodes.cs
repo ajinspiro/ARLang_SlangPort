@@ -4,17 +4,23 @@ namespace ARLang.Core;
 
 public record ArlNumericConstant(double Value);
 
-[GenerateOneOf]
-public partial class ArlNumericExpression : OneOfBase<ArlNumericConstant, ArlNumericBinaryOperation>;
 public record Add;
 public record Sub;
 public record Mul;
 public record Div;
 
 [GenerateOneOf]
-public partial class ArlNumericOperation : OneOfBase<Add, Sub, Mul, Div>;
+public partial class ArlNumericBinaryOperator : OneOfBase<Add, Sub, Mul, Div>;
 
-public record ArlNumericBinaryOperation(ArlNumericExpression Lhs, ArlNumericOperation Operation, ArlNumericExpression Rhs);
+public record ArlNumericBinaryOperation(ArlNumericExpression Lhs, ArlNumericBinaryOperator Operation, ArlNumericExpression Rhs);
+
+[GenerateOneOf]
+public partial class ArlNumericUnaryOperator : OneOfBase<Add, Sub>;
+
+public record ArlNumericUnaryOperation(ArlNumericUnaryOperator Operation, ArlNumericExpression Operand);
+
+[GenerateOneOf]
+public partial class ArlNumericExpression : OneOfBase<ArlNumericConstant, ArlNumericBinaryOperation, ArlNumericUnaryOperation>;
 
 public static class ArlangExtensions
 {
@@ -29,6 +35,10 @@ public static class ArlangExtensions
                     sub => binOp.Lhs.Evaluate() - binOp.Rhs.Evaluate(),
                     mul => binOp.Lhs.Evaluate() * binOp.Rhs.Evaluate(),
                     div => binOp.Lhs.Evaluate() / binOp.Rhs.Evaluate()
+                ),
+                unaryOp => unaryOp.Operation.Match(
+                    add => unaryOp.Operand.Evaluate(),
+                    sub => -unaryOp.Operand.Evaluate()
                 )
             );
         }

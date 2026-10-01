@@ -48,9 +48,9 @@ public record Mul;
 public record Div;
 
 [GenerateOneOf]
-public partial class ArlNumericOperation : OneOfBase<Add, Sub, Mul, Div>;
+public partial class ArlNumericBinaryOperator : OneOfBase<Add, Sub, Mul, Div>;
 
-public record ArlNumericBinaryOperation(ArlNumericExpression Lhs, ArlNumericOperation Operation, ArlNumericExpression Rhs);
+public record ArlNumericBinaryOperation(ArlNumericExpression Lhs, ArlNumericBinaryOperator Operation, ArlNumericExpression Rhs);
 ```
 
 Now we have all the data structures to model our AST for now. Finally, we will patch the definition of `ArlNumericExpression` so that binary operations can be modelled using our AST.
@@ -106,6 +106,56 @@ Console.WriteLine($"1+2*3={ast1.Evaluate()}");
 ```
 
 This will print `1+2*3=7`.
+
+To finalize our expression evaluator, we need to support unary operations too.
+
+```csharp
+[GenerateOneOf]
+public partial class ArlNumericUnaryOperator : OneOfBase<Add, Sub>;
+
+public record ArlNumericUnaryOperation(ArlNumericUnaryOperator Operation, ArlNumericExpression Operand);
+```
+
+Lets extend `ArlNumericExpression` once more for modelling unary operators.
+
+```csharp
+[GenerateOneOf]
+public partial class ArlNumericExpression : OneOfBase<ArlNumericConstant, ArlNumericBinaryOperation, ArlNumericUnaryOperation>;
+```
+
+Lastly, we need to modify our `Evaluate` function to evaluate unary expressions too.
+
+```csharp
+public static class ArlangExtensions
+{
+    extension(ArlNumericExpression e)
+    {
+        public double Evaluate()
+        {
+            return e.Match(
+                constant => constant.Value,
+                binOp => binOp.Operation.Match(
+                    add => binOp.Lhs.Evaluate() + binOp.Rhs.Evaluate(),
+                    sub => binOp.Lhs.Evaluate() - binOp.Rhs.Evaluate(),
+                    mul => binOp.Lhs.Evaluate() * binOp.Rhs.Evaluate(),
+                    div => binOp.Lhs.Evaluate() / binOp.Rhs.Evaluate()
+                ),
+                unaryOp => unaryOp.Operation.Match(
+                    add => unaryOp.Operand.Evaluate(),
+                    sub => -unaryOp.Operand.Evaluate()
+                )
+            );
+        }
+    }
+}
+```
+
+Lets test it out. We will try to flip out `ast1` using unary `-`.
+
+```csharp
+Console.WriteLine($"1+2*3={ast1.Evaluate()}; Neg(7)={ast2.Evaluate()}");
+```
+This will print `1+2*3=7; Neg(7)=-7`.
 <hr>
 <hr>
 <hr>
