@@ -24,11 +24,11 @@ public static class ArlangExtensions
         {
             return e.Match(
                 constant => constant.Value,
-                binaryOperation => binaryOperation.Operation.Match(
-                    add => binaryOperation.Lhs.Evaluate() + binaryOperation.Rhs.Evaluate(),
-                    sub => binaryOperation.Lhs.Evaluate() - binaryOperation.Rhs.Evaluate(),
-                    mul => binaryOperation.Lhs.Evaluate() * binaryOperation.Rhs.Evaluate(),
-                    div => binaryOperation.Lhs.Evaluate() / binaryOperation.Rhs.Evaluate()
+                binOp => binOp.Operation.Match(
+                    add => binOp.Lhs.Evaluate() + binOp.Rhs.Evaluate(),
+                    sub => binOp.Lhs.Evaluate() - binOp.Rhs.Evaluate(),
+                    mul => binOp.Lhs.Evaluate() * binOp.Rhs.Evaluate(),
+                    div => binOp.Lhs.Evaluate() / binOp.Rhs.Evaluate()
                 )
             );
         }

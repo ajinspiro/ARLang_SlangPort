@@ -35,7 +35,8 @@ Modelling addition, subtraction, multiplication and division can be a bit tricki
 
 ```csharp
 [GenerateOneOf]
-public partial class ArlNumericExpression : OneOfBase<ArlNumericConstant>; // A union with one type param is not much useful. But hold on - we will extend this type param list soon.
+// A union with one type param is not much useful. But hold on - we will extend this type param list soon.
+public partial class ArlNumericExpression : OneOfBase<ArlNumericConstant>; 
 ```
 
 As we now have a structure to model numerical experssion, we can now model binary operations `+`,`-`,`*` and `/`. We will use a single `ArlNumericBinaryOperation` record to model addition, subtraction, multiplication and division. We will differentiate the 4 operations using another `union`.
@@ -76,3 +77,35 @@ ArlNumericExpression ast1 = new ArlNumericBinaryOperation(
 Everything looks good till now. For this step, lets ignore how the string `1+2*3` will be converted into an `ArlNumericExpression`. We will cover that in the next step. As far as this step is concerned, `1+2*3` has been converted into `ArlNumericExpression` as shown above.
 
 Now the question is what are we going to do with this nested data structure. The answer is we will evaluate the expression and get its value - which is `7` (not `9`). For this we need to write an `Evaluate` function that accepts arbitary `ArlNumericExpression` and computes its value.
+
+```csharp
+public static class ArlangExtensions
+{
+    extension(ArlNumericExpression e)
+    {
+        public double Evaluate()
+        {
+            return e.Match(
+                constant => constant.Value,
+                binOp => binOp.Operation.Match(
+                    add => binOp.Lhs.Evaluate() + binOp.Rhs.Evaluate(),
+                    sub => binOp.Lhs.Evaluate() - binOp.Rhs.Evaluate(),
+                    mul => binOp.Lhs.Evaluate() * binOp.Rhs.Evaluate(),
+                    div => binOp.Lhs.Evaluate() / binOp.Rhs.Evaluate()
+                )
+            );
+        }
+    }
+}
+```
+
+Now lets compute the value of the expression using the `Evaluate` function.
+
+```csharp
+Console.WriteLine($"1+2*3={ast1.Evaluate()}");
+```
+
+This will print `1+2*3=7`.
+<hr>
+<hr>
+<hr>
