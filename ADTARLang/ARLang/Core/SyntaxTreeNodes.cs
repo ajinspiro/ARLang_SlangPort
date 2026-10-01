@@ -2,26 +2,34 @@ using OneOf;
 
 namespace ARLang.Core;
 
-[GenerateOneOf]
-public partial class ArlExpression : OneOfBase<ArlConstant, ArlAddition, ArlSubtraction, ArlMultiplication, ArlDivision>;
-public record ArlConstant(double Value);
-public record ArlAddition(ArlExpression E1, ArlExpression E2);
-public record ArlSubtraction(ArlExpression E1, ArlExpression E2);
-public record ArlMultiplication(ArlExpression E1, ArlExpression E2);
-public record ArlDivision(ArlExpression E1, ArlExpression E2);
+public record ArlNumericConstant(double Value);
 
-public static class ArlExpressionExtensions
+[GenerateOneOf]
+public partial class ArlNumericExpression : OneOfBase<ArlNumericConstant, ArlNumericBinaryOperation>;
+public record Add;
+public record Sub;
+public record Mul;
+public record Div;
+
+[GenerateOneOf]
+public partial class ArlNumericOperation : OneOfBase<Add, Sub, Mul, Div>;
+
+public record ArlNumericBinaryOperation(ArlNumericExpression Lhs, ArlNumericOperation Operation, ArlNumericExpression Rhs);
+
+public static class ArlangExtensions
 {
-    extension(ArlExpression arlExpression)
+    extension(ArlNumericExpression e)
     {
         public double Evaluate()
         {
-            return arlExpression.Match(
-                arlConstant => arlConstant.Value,
-                arlAddition => Evaluate(arlAddition.E1) + Evaluate(arlAddition.E2),
-                arlSubtraction => Evaluate(arlSubtraction.E1) - Evaluate(arlSubtraction.E2),
-                arlMultiplication => Evaluate(arlMultiplication.E1) * Evaluate(arlMultiplication.E2),
-                arlDivision => Evaluate(arlDivision.E1) / Evaluate(arlDivision.E2)
+            return e.Match(
+                constant => constant.Value,
+                binaryOperation => binaryOperation.Operation.Match(
+                    add => binaryOperation.Lhs.Evaluate() + binaryOperation.Rhs.Evaluate(),
+                    sub => binaryOperation.Lhs.Evaluate() - binaryOperation.Rhs.Evaluate(),
+                    mul => binaryOperation.Lhs.Evaluate() * binaryOperation.Rhs.Evaluate(),
+                    div => binaryOperation.Lhs.Evaluate() / binaryOperation.Rhs.Evaluate()
+                )
             );
         }
     }

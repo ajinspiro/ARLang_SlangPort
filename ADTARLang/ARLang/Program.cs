@@ -1,16 +1,13 @@
 ﻿using ARLang.Core;
 
-ArlExpression ast1 = new ArlAddition(
-    new ArlConstant(1), new ArlConstant(2)
+ArlNumericExpression ast1 = new ArlNumericBinaryOperation(
+    new ArlNumericConstant(1),
+    new Add(),
+    new ArlNumericBinaryOperation(
+        new ArlNumericConstant(2),
+        new Mul(),
+        new ArlNumericConstant(3)
+    )
 );
 
-Console.WriteLine($"1+2={ast1.Evaluate()}");
-
-ArlExpression ast2 = new ArlMultiplication(
-                        new ArlAddition(
-                            new ArlConstant(1), new ArlConstant(2)
-                        ),
-                        new ArlConstant(3)
-                    );
-
-Console.WriteLine($"1+2*3={ast2.Evaluate()}");
+Console.WriteLine($"1+2*3={ast1.Evaluate()}");
