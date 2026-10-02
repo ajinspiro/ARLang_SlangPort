@@ -11,6 +11,7 @@ public record TokenOpenParenthesis;
 public record TokenCloseParenthesis;
 public record TokenNumericConstant(double Value);
 public record TokenInvalid(string Value);
+public record TokenTrivial; // to model whitespaces, tabs etc - those that can be discarded as they dont need to be used in AST building.
 
 [GenerateOneOf]
 public partial class Token : OneOfBase<
@@ -21,8 +22,13 @@ public partial class Token : OneOfBase<
     TokenOpenParenthesis,
     TokenCloseParenthesis,
     TokenNumericConstant,
-    TokenInvalid
->;
+    TokenInvalid,
+    TokenTrivial
+>
+{
+    public bool IsTokenTrivial => IsT8;
+    public TokenTrivial AsTokenTrivial => AsT8;
+};
 public class LexicalAnalyzer
 {
     private int index = 0;
@@ -38,7 +44,10 @@ public class LexicalAnalyzer
         do
         {
             tempToken = GetToken(sourceCode);
-            tokens.Add(tempToken);
+            if (!tempToken.IsTokenTrivial)
+            {
+                tokens.Add(tempToken);
+            }
         } while (index + 1 <= sourceCode.Length);
         index = 0;
         return [.. tokens];
@@ -54,12 +63,15 @@ public class LexicalAnalyzer
             case '/': { index++; return new TokenSlash(); }
             case '(': { index++; return new TokenOpenParenthesis(); }
             case ')': { index++; return new TokenCloseParenthesis(); }
+            case ' ':
+            case '\t':
+            case '\r':
+            case '\n': { index++; return new TokenTrivial(); }
             default:
                 {
                     if (!IsDigit(sourceCode[index]))
                     {
-                        index++;
-                        return new TokenInvalid($"Invalid chatacter {sourceCode[index]}");
+                        return new TokenInvalid($"Invalid chatacter {sourceCode[index++]}");
                     }
                     return GetDigitToken(sourceCode);
                 }
