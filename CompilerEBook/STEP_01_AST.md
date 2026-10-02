@@ -2,7 +2,7 @@
 
 The authors think a pragmatic guide written for busy developers who wants to begin understanding the mysterious black box from the first pages itself need to start from the AST. So, we will start by building the data structures required to build the AST of arbitary mathematical expressions and an evaluation engine that can evaluate those experssions to produce its value in this stage. Examples of expressions are `1+2` and `1+2*3`. To get correct result while evaluating one, we need to keep in mind the BODMAS precedence rule. If we dont, we will get `9` instead of `7` for `1+2*3`.
 
-Abstract Syntax Tree is a representation of our source code in a hierarchical structure that does not loose the meaning we intented when writing our source code. For example, a source string `1+2*3` will become:
+Abstract Syntax Tree is a representation of our source code in a hierarchical structure. The meaning we intented when writing our source code is not lost when its converted to AST. For example, a source string `1+2*3` will become:
 
 ```mermaid
 graph TD
@@ -18,7 +18,7 @@ graph TD
     class Num1,Num2,Num3 literal;
 ```
 
-To represent each type of node there will be a data structure. So lets start off by building them. We will be using `C# v14` for this book and its very popular `OneOf` library for exploiting algebraic data type composiiton. The first one will be a record `NumericConstant`. In the our ASTree, numbers will be leaf nodes and will be contained by this record type.
+Each item appearing in the source code can be a single character like `7`, `+` or `.` or multiple characters in length like `21` or `while` will be represented in the AST as a node. Some nodes will contain other nodes, like `+` while others cannot, like `7`. Former types of nodes are called parent nodes and latter ones are called leaf nodes. To represent each type of node there will be a data structure. So lets start off by building them. We will be using `C# v14` for this book and its very popular `OneOf` library for exploiting algebraic data type composiiton. The first one will be a record `ArlNumericConstant`. In the our AST, all numbers will be leaf nodes and will be contained by this record type.
 
 ```csharp
 public record ArlNumericConstant(double Value);
@@ -31,15 +31,19 @@ var one = new ArlNumericConstant(1);
 var twentyOne = new ArlNumericConstant(21);
 ```
 
-Modelling addition, subtraction, multiplication and division can be a bit trickier. Why ? Consider `1+(2*3)` itself (visualized above). The right hand operand of addition operation is not a number, its another expression. So, to perform that addition, we must first calculate the multiplication first. Which means the record we are going to construct to model addition cannot cannot simply take two `ArlNumericConstant` as arguments. They need to be sub expressions themselves. So, let's create a `union` named `ArlNumericExpression` using `OneOf`. Currently it can hold only `ArlNumericConstant` but we will change it soon.
+Now lets move on to binary operations, specifically addition, subtraction, multiplication and division.
+
+Modelling these binary operations can be a bit trickier. Why ? Consider `1+(2*3)` itself (visualized above). The right hand operand of addition is not a number, its another expression. So, to perform that addition, we must first calculate the multiplication first. Which means the record we are going to construct to model addition cannot cannot simply take two `ArlNumericConstant` as arguments. They need to be sub expressions themselves. So, let's create a `union` named `ArlNumericExpression` using `OneOf`. Currently it can hold only `ArlNumericConstant` but we will change it soon.
 
 ```csharp
 [GenerateOneOf]
-// A union with one type param is not much useful. But hold on - we will extend this type param list soon.
+// A union with one type param is not much useful.
+// But hold on - we will extend this type param list soon.
 public partial class ArlNumericExpression : OneOfBase<ArlNumericConstant>; 
 ```
+Small note - The `[GenerateOneOf]` attribute comes from `OneOf.SourceGenerator` nuget package. Make sure you install it too.
 
-As we now have a structure to model numerical experssion, we can now model binary operations `+`,`-`,`*` and `/`. We will use a single `ArlNumericBinaryOperation` record to model addition, subtraction, multiplication and division. We will differentiate the 4 operations using another `union`.
+As we now have a structure to model numerical experssion, we can now model binary operations `+`,`-`,`*` and `/`. We will use a single `ArlNumericBinaryOperation` record to model addition, subtraction, multiplication and division. We will differentiate the 4 operators using another union `ArlNumericBinaryOperator` .
 
 ```csharp
 public record Add;
@@ -53,7 +57,7 @@ public partial class ArlNumericBinaryOperator : OneOfBase<Add, Sub, Mul, Div>;
 public record ArlNumericBinaryOperation(ArlNumericExpression Lhs, ArlNumericBinaryOperator Operation, ArlNumericExpression Rhs);
 ```
 
-Now we have all the data structures to model our AST for now. Finally, we will patch the definition of `ArlNumericExpression` so that binary operations can be modelled using our AST.
+Now we have all the data structures to model our AST for now. Finally, we will patch the definition of `ArlNumericExpression` so that our AST can support binary operations too along with numeric constants.
 
 ```csharp
 [GenerateOneOf]
@@ -74,9 +78,9 @@ ArlNumericExpression ast1 = new ArlNumericBinaryOperation(
 );
 ```
 
-Everything looks good till now. For this step, lets ignore how the string `1+2*3` will be converted into an `ArlNumericExpression`. We will cover that in the next step. As far as this step is concerned, `1+2*3` has been converted into `ArlNumericExpression` as shown above.
+Everything looks good till now. For this step, lets ignore how the source code `1+2*3` will be converted into an `ArlNumericExpression`. We will cover that in the next step of this book called Lexical Analysis. As far as this step is concerned, `1+2*3` has been converted into `ArlNumericExpression` as shown above.
 
-Now the question is what are we going to do with this nested data structure. The answer is we will evaluate the expression and get its value - which is `7` (not `9`). For this we need to write an `Evaluate` function that accepts arbitary `ArlNumericExpression` and computes its value.
+Now the question is what are we going to do with this nested data structure. The answer is we will traverse the AST and compute a value - which is `7` (not `9`). For this we need to write an `Evaluate` function that accepts arbitary `ArlNumericExpression`.
 
 ```csharp
 public static class ArlangExtensions
@@ -99,7 +103,9 @@ public static class ArlangExtensions
 }
 ```
 
-Now lets compute the value of the expression using the `Evaluate` function.
+Remember earlier we discussed evaluating the `+` is a bit tricky ? We are going to handle that by evaluating the left hand side expression and right high side expression first and them performing the addition.
+
+Now lets put our `Evaluate` function to a test.
 
 ```csharp
 Console.WriteLine($"1+2*3={ast1.Evaluate()}");
@@ -153,6 +159,8 @@ public static class ArlangExtensions
 Lets test it out. We will try to flip out `ast1` using unary `-`.
 
 ```csharp
+ArlNumericExpression ast2 = new ArlNumericUnaryOperation(new Sub(), ast1);
+
 Console.WriteLine($"1+2*3={ast1.Evaluate()}; Neg(7)={ast2.Evaluate()}");
 ```
 This will print `1+2*3=7; Neg(7)=-7`.
