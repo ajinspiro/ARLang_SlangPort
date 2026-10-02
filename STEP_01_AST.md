@@ -164,6 +164,3 @@ ArlNumericExpression ast2 = new ArlNumericUnaryOperation(new Sub(), ast1);
 Console.WriteLine($"1+2*3={ast1.Evaluate()}; Neg(7)={ast2.Evaluate()}");
 ```
 This will print `1+2*3=7; Neg(7)=-7`.
-<hr>
-<hr>
-<hr>

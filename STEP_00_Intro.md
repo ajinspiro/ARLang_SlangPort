@@ -21,6 +21,3 @@ ARLang will have 5 stages in its compilation process. You can picturize them as 
     - Creation of executable file
 
 The above stages of ARLang can be classified as front end and back end. Lexical analysis and parsing together constitute front end and semantic validation along with execution/executable file creation constitute back end. So on what criteria is this partitioning made ? In real compilers like clang/llvm or java, the front end part is the part which can be reused between all the different machine architectures the compiler needs to support. This is usually an intermediate representation and such IRs are constructed from the ASTs generated from the parser. ARLang is too simple to have an IR at least in this edition of the book. The backend is the machine specific section that takes the IR and either executes it or compiles it into machine code.
-<hr>
-<hr>
-<hr>
