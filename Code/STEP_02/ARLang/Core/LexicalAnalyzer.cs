@@ -10,8 +10,15 @@ public record TokenSlash;
 public record TokenOpenParenthesis;
 public record TokenCloseParenthesis;
 public record TokenNumericConstant(double Value);
+
+// TokenInvalid is used to hold invalid characters 
+// entered in source code (if they are present).
 public record TokenInvalid(string Value);
-public record TokenTrivial; // to model whitespaces, tabs etc - those that can be discarded as they dont need to be used in AST building.
+
+// TokenTrivial is for modelling whitespaces, tabs etc. 
+// Those that can be discarded as they dont need to be 
+// used in AST building.
+public record TokenTrivial;
 
 [GenerateOneOf]
 public partial class Token : OneOfBase<
@@ -27,11 +34,11 @@ public partial class Token : OneOfBase<
 >
 {
     public bool IsTokenTrivial => IsT8;
-    public TokenTrivial AsTokenTrivial => AsT8;
 };
 public class LexicalAnalyzer
 {
     private int index = 0;
+    private LexicalAnalyzer() { }
     public static LexicalAnalyzer Instance { get; } = new();
     public ImmutableList<Token> ProduceTokens(string sourceCode)
     {
