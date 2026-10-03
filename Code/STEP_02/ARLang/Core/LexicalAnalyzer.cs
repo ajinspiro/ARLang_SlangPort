@@ -88,6 +88,7 @@ public class LexicalAnalyzer
     private Token GetDigitToken(string sourceCode)
     {
         string numberValueString = string.Empty;
+        // index + 1 <= sourceCode.Length => checks if end of source code is reached
         while (index + 1 <= sourceCode.Length && (IsDigit(sourceCode[index]) || sourceCode[index] == '.'))
         {
             numberValueString += sourceCode[index];
