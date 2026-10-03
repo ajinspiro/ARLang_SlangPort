@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="ARLang.Tests/ARLang.Tests.csproj" />
   <Project Path="ARLang/ARLang.csproj" />
 </Solution>
