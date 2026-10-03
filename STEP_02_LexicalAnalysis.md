@@ -108,7 +108,7 @@ private Token GetToken(string sourceCode)
             {
                 if (!IsDigit(sourceCode[index]))
                 {
-                    return new TokenInvalid($"Invalid chatacter {sourceCode[index++]}");
+                    return new TokenInvalid($"Invalid character {sourceCode[index++]}");
                 }
                 return GetDigitToken(sourceCode);
             }
