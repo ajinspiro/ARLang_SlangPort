@@ -51,7 +51,7 @@ public class Parser
 
     private ArlParseResult ParseTerm()
     {
-        ArlParseResult lhsResult = ParseFactor();
+        ArlParseResult lhsResult = ParseUnaryExpression();
         if (lhsResult.IsError)
         {
             return lhsResult.AsError;
@@ -60,7 +60,7 @@ public class Parser
         {
             ArlNumericBinaryOperator operatorUnion = tokens[index].IsTokenStar ? new Mul() : new Div();
             index++;
-            ArlParseResult rhsResult = ParseFactor();
+            ArlParseResult rhsResult = ParseUnaryExpression();
             if (rhsResult.IsError)
             {
                 return rhsResult;
@@ -69,6 +69,23 @@ public class Parser
             lhsResult = binaryOperation;
         }
         return lhsResult;
+    }
+
+    private ArlParseResult ParseUnaryExpression()
+    {
+        if (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus)
+        {
+            ArlNumericUnaryOperator unaryOperatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
+            index++;
+            ArlParseResult unaryOperandResult = ParseUnaryExpression();
+            if (unaryOperandResult.IsError)
+            {
+                return unaryOperandResult;
+            }
+            ArlNumericUnaryOperation unaryOperation = new(unaryOperatorUnion, unaryOperandResult.AsResult);
+            return new ArlNumericExpression(unaryOperation);
+        }
+        return ParseFactor();
     }
 
     private ArlParseResult ParseFactor()
@@ -95,19 +112,6 @@ public class Parser
             }
             index++;
             return nestedExpressionResult;
-        }
-        if (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus) // unary expression
-        {
-            ArlNumericUnaryOperator operatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
-            index++;
-            ArlParseResult nestedExpressionResult = ParseExpression();
-            if (nestedExpressionResult.IsError)
-            {
-                return nestedExpressionResult;
-            }
-            ArlNumericUnaryOperation astNode = new(operatorUnion, nestedExpressionResult.AsResult);
-            ArlNumericExpression astNodeUnion = new(astNode);
-            return astNodeUnion;
         }
         return new ArlParseError("Something went wrong - control flow should never reach here");
     }

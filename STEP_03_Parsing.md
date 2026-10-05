@@ -6,19 +6,16 @@ The parser parsers the list of tokens by following a formal grammar. Formal gram
 
 As we saw earlier, if a user tried to execute/compile the expression `+12*3`, the list of tokens produced by lexical analyzer will not have any invalid token. But the problem is in the ordering of the tokens. The sequence is not in infix notation and thus ARLang's parser cannot generate an AST from this list. To represent this type of scenario where the user input was lexically valid but structurally incorrect, we are going to introduce a type called `ArlParseError`. The parser will be returning a union `ArlParseResult` which can be either an instance of `ArlNumericExpression` or `ArlParseError`.
 
-Before implementing the parser, lets see the "rules" which basically is what the grammar is in EBNF notation. I'm afraid I'm not going to explain what EBNF is here at this time. Feel free to look what it is up.
+Before implementing the parser, lets see the "production rules" which collectively are what the grammar is in EBNF notation. EBNF will not be covered here at this time. Feel free to look what it is up.
 
 ```ebnf
 expression = term { ("+" | "-") term } ;
-term       = factor { ("*" | "/") factor } ;
-factor     = NUMBER | "(" expression ")" | ("+" | "-") ;
+term       = unary { ("*" | "/") unary } ;
+unary      = ("+" | "-") unary | factor ;
+factor     = NUMBER | "(" expression ")" ;
 ```
 
-<hr>
-test
-<hr>
-
-Now lets look at our parser at a high level.
+Each line in the above EBNF represents a single production rule, which translates to a single method inside the parser itself. Now lets look at our parser at a high level.
 
 ```csharp
 public class Parser
@@ -33,6 +30,10 @@ public class Parser
         throw new NotImplementedException();
     }
     private ArlParseResult ParseTerm()
+    {
+        throw new NotImplementedException();
+    }
+    private ArlParseResult ParseUnaryExpression()
     {
         throw new NotImplementedException();
     }

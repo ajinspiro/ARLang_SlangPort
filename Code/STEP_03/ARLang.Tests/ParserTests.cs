@@ -9,6 +9,7 @@ public class ParserTests
     [InlineData("-2*(3+3)", -12)]
     [InlineData("-1 + 2", 1)]
     [InlineData("2 * -3 + 4", -2)]
+    [InlineData("--(1 + 2)", 3)]
     public void Test1(string sourceCode, double expected)
     {
         var tokens = new LexicalAnalyzer().ProduceTokens(sourceCode);
@@ -25,9 +26,6 @@ public class ParserTests
         var tokens = new LexicalAnalyzer().ProduceTokens(sourceCode);
         var parseResult = new Parser().Parse(tokens);
         tokens.ForEach(token => Assert.IsNotType<TokenInvalid>(token.Value));
-        parseResult.Switch(
-            result => Assert.Fail("Test failed - operation was expected to return a parse error"),
-            parseError => { return; }
-        );
+        Assert.True(parseResult.IsError);
     }
 }
