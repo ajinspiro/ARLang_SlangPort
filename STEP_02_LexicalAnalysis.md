@@ -61,14 +61,12 @@ public partial class Token : OneOfBase<
 };
 ```
 
-Now lets see the nutshell of our lexical analyzer.
+Now lets look at our lexical analyzer at a high level.
 
 ```csharp
 public class LexicalAnalyzer
 {
     private int index = 0;
-    private LexicalAnalyzer() { }
-    public static LexicalAnalyzer Instance { get; } = new();
     public ImmutableList<Token> ProduceTokens(string sourceCode)
     {
         throw new NotImplementedException();
@@ -76,7 +74,7 @@ public class LexicalAnalyzer
 }
 ```
 
-`LexicalAnalyzer` has a public `ProduceTokens(string)` method. This method is the whole lexical analysis process. We will decompose this into sub-processes shortly. LexicalAnalyzer also has a private `index` property. This property helps us to keep track of which character of the source code we are trying to identify a token using `sourceCode[length]`. There is also a private constructor defined and an `Instance` property. Together they acheive a small trick - the private constructor prevents object creation outside class and the `Instance` property instantiates a LexicalAnalyzer once and the developers can reuse this object many times. This is done to make LexicalAnalyzer a singleton - meaning a class with only one object in the entire lifetime of the application. 
+`LexicalAnalyzer` has a public `ProduceTokens(string)` method. This method is the whole lexical analysis process. We will decompose this into sub-processes shortly. LexicalAnalyzer also has a private `index` property. This property helps us to keep track of which character of the source code we are trying to identify a token using `sourceCode[length]`.
 
 As we said earlier, we need to decompose the `ProduceTokens(string)` method. Lets begin by creating an `IsDigit(char)` method. Why we need this function will make sense way before the end of this chapter. `IsDigit(char)` simply checks if the input character is a digit or not.
 

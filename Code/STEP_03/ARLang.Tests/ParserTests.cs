@@ -7,6 +7,8 @@ public class ParserTests
     [Theory]
     [InlineData("1+2*3", 7)]
     [InlineData("-2*(3+3)", -12)]
+    [InlineData("-1 + 2", 1)]
+    [InlineData("2 * -3 + 4", -2)]
     public void Test1(string sourceCode, double expected)
     {
         var tokens = new LexicalAnalyzer().ProduceTokens(sourceCode);
