@@ -23,7 +23,7 @@ public record TokenInvalid(string Value);
 public record TokenTrivial; 
 ```
 
-Now lets create a union for representing a token. A token will be one instance of either of the above listed record (token) types. For ease of coding, we will create a `IsTokenTrivial` custom wrapper property that wraps `IsT8` property of the union simply because it reads better. If we went with `IsT8` everyone will need to lookup what 8th type is and its not fun in a union where there are a lot of members.
+Now lets create a union for representing a token. A token will be one instance of either of the above listed record (token) types. For ease of coding, we will create a `IsTokenTrivial` and other such custom properties that wraps `IsT8` and other such properties of the union simply because it reads better. If we went with `IsT8` everyone will need to lookup what 8th type is and its not fun in a union where there are a lot of members.
 
 ```csharp
 [GenerateOneOf]
@@ -39,7 +39,25 @@ public partial class Token : OneOfBase<
     TokenTrivial
 >
 {
+    public bool IsTokenPlus => IsT0;
+    public bool IsTokenMinus => IsT1;
+    public bool IsTokenStar => IsT2;
+    public bool IsTokenSlash => IsT3;
+    public bool IsTokenOpenParenthesis => IsT4;
+    public bool IsTokenCloseParenthesis => IsT5;
+    public bool IsTokenNumericConstant => IsT6;
+    public bool IsTokenInvalid => IsT7;
     public bool IsTokenTrivial => IsT8;
+
+    public TokenPlus AsTokenPlus => AsT0;
+    public TokenMinus AsTokenMinus => AsT1;
+    public TokenStar AsTokenStar => AsT2;
+    public TokenSlash AsTokenSlash => AsT3;
+    public TokenOpenParenthesis AsTokenOpenParenthesis => AsT4;
+    public TokenCloseParenthesis AsTokenCloseParenthesis => AsT5;
+    public TokenNumericConstant AsTokenNumericConstant => AsT6;
+    public TokenInvalid AsTokenInvalid => AsT7;
+    public TokenTrivial AsTokenTrivial => AsT8;
 };
 ```
 
@@ -151,7 +169,7 @@ public class LexicalAnalyzerTests
     public void Test1()
     {
         string expression1 = "1+2*3";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenNumericConstant(1),
@@ -170,7 +188,7 @@ public class LexicalAnalyzerTests
     public void Test2()
     {
         string expression1 = " 34 + 2.3 * 0.55";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenNumericConstant(34),
@@ -189,7 +207,7 @@ public class LexicalAnalyzerTests
     public void Test3()
     {
         string expression1 = "\t 34   + 2.3\t  \n * 0.55\t";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenNumericConstant(34),
@@ -198,6 +216,73 @@ public class LexicalAnalyzerTests
             new TokenStar(),
             new TokenNumericConstant(0.55)
             ];
+        for (int i = 0; i < actuals.Count; i++)
+        {
+            Assert.Equal(expected[i], actuals[i]);
+        }
+    }
+
+    [Fact]
+    public void Test4()
+    {
+        string expression1 = "";
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
+
+        Assert.NotNull(actuals);
+        Assert.Empty(actuals);
+    }
+
+    [Fact]
+    public void Test5_SemanticallyInvalidButLexicallyValidExpression()
+    {
+        string expression1 = "(*)76.23/11+-";
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
+
+        List<Token> expected = [
+            new TokenOpenParenthesis(),
+            new TokenStar(),
+            new TokenCloseParenthesis(),
+            new TokenNumericConstant(76.23),
+            new TokenSlash(),
+            new TokenNumericConstant(11),
+            new TokenPlus(),
+            new TokenMinus()
+            ];
+
+        for (int i = 0; i < actuals.Count; i++)
+        {
+            Assert.Equal(expected[i], actuals[i]);
+        }
+    }
+
+    [Fact]
+    public void Test6_InvalidExpression()
+    {
+        string expression1 = "6..2";
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
+
+        List<Token> expected = [
+            new TokenInvalid($"Invalid token {expression1}")
+            ];
+
+        for (int i = 0; i < actuals.Count; i++)
+        {
+            Assert.Equal(expected[i], actuals[i]);
+        }
+    }
+
+    [Fact]
+    public void Test7_InvalidExpression()
+    {
+        string expression1 = "1~2";
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
+
+        List<Token> expected = [
+            new TokenNumericConstant(1),
+            new TokenInvalid($"Invalid character ~"),
+            new TokenNumericConstant(2)
+            ];
+
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);

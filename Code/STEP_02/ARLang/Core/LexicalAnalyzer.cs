@@ -33,13 +33,29 @@ public partial class Token : OneOfBase<
     TokenTrivial
 >
 {
+    public bool IsTokenPlus => IsT0;
+    public bool IsTokenMinus => IsT1;
+    public bool IsTokenStar => IsT2;
+    public bool IsTokenSlash => IsT3;
+    public bool IsTokenOpenParenthesis => IsT4;
+    public bool IsTokenCloseParenthesis => IsT5;
+    public bool IsTokenNumericConstant => IsT6;
+    public bool IsTokenInvalid => IsT7;
     public bool IsTokenTrivial => IsT8;
+
+    public TokenPlus AsTokenPlus => AsT0;
+    public TokenMinus AsTokenMinus => AsT1;
+    public TokenStar AsTokenStar => AsT2;
+    public TokenSlash AsTokenSlash => AsT3;
+    public TokenOpenParenthesis AsTokenOpenParenthesis => AsT4;
+    public TokenCloseParenthesis AsTokenCloseParenthesis => AsT5;
+    public TokenNumericConstant AsTokenNumericConstant => AsT6;
+    public TokenInvalid AsTokenInvalid => AsT7;
+    public TokenTrivial AsTokenTrivial => AsT8;
 };
 public class LexicalAnalyzer
 {
     private int index = 0;
-    private LexicalAnalyzer() { }
-    public static LexicalAnalyzer Instance { get; } = new();
     public ImmutableList<Token> ProduceTokens(string sourceCode)
     {
         if (sourceCode.Trim().Length == 0)
