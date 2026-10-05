@@ -18,8 +18,6 @@ public class Parser
 {
     private int index = 0;
     private ImmutableList<Token> tokens = [];
-    private Parser() { }
-    public static Parser Instance { get; } = new();
 
     public ArlParseResult Parse(ImmutableList<Token> tokens)
     {

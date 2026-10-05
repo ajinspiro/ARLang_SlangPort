@@ -56,8 +56,6 @@ public partial class Token : OneOfBase<
 public class LexicalAnalyzer
 {
     private int index = 0;
-    private LexicalAnalyzer() { }
-    public static LexicalAnalyzer Instance { get; } = new();
     public ImmutableList<Token> ProduceTokens(string sourceCode)
     {
         if (sourceCode.Trim().Length == 0)

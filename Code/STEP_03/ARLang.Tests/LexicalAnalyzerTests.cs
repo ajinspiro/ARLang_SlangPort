@@ -8,7 +8,7 @@ public class LexicalAnalyzerTests
     public void Test1()
     {
         string expression1 = "1+2*3";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenNumericConstant(1),
@@ -27,7 +27,7 @@ public class LexicalAnalyzerTests
     public void Test2()
     {
         string expression1 = " 34 + 2.3 * 0.55";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenNumericConstant(34),
@@ -46,7 +46,7 @@ public class LexicalAnalyzerTests
     public void Test3()
     {
         string expression1 = "\t 34   + 2.3\t  \n * 0.55\t";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenNumericConstant(34),
@@ -65,7 +65,7 @@ public class LexicalAnalyzerTests
     public void Test4()
     {
         string expression1 = "";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         Assert.NotNull(actuals);
         Assert.Empty(actuals);
@@ -75,7 +75,7 @@ public class LexicalAnalyzerTests
     public void Test5_SemanticallyInvalidButLexicallyValidExpression()
     {
         string expression1 = "(*)76.23/11+-";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenOpenParenthesis(),
@@ -98,7 +98,7 @@ public class LexicalAnalyzerTests
     public void Test6_InvalidExpression()
     {
         string expression1 = "6..2";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenInvalid($"Invalid token {expression1}")
@@ -114,7 +114,7 @@ public class LexicalAnalyzerTests
     public void Test7_InvalidExpression()
     {
         string expression1 = "1~2";
-        var actuals = LexicalAnalyzer.Instance.ProduceTokens(expression1);
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
 
         List<Token> expected = [
             new TokenNumericConstant(1),
