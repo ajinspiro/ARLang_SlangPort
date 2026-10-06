@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using OneOf;
 
 namespace ARLang.Core;
@@ -11,7 +12,7 @@ public record TokenOpenParenthesis;
 public record TokenCloseParenthesis;
 public record TokenNumericConstant(double Value);
 
-// TokenInvalid is used to hold invalid characters 
+// TokenInvalid is used to hold invalid lexemes 
 // entered in source code (if they are present).
 public record TokenInvalid(string Value);
 
@@ -110,7 +111,7 @@ public class LexicalAnalyzer
             numberValueString += sourceCode[index];
             index++;
         }
-        bool isParseSuccess = double.TryParse(numberValueString, out double result);
+        bool isParseSuccess = double.TryParse(numberValueString, CultureInfo.InvariantCulture, out double result);
         return isParseSuccess ? new TokenNumericConstant(result) : new TokenInvalid($"Invalid token {numberValueString}");
     }
 

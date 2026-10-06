@@ -1,6 +1,6 @@
 # Lexical Analysis
 
-Lexical analysis is the first process that happens in the compilation of source code. Lets recall that source code is a sequence of characters. If so, lexical analysis is the process of grouping these characters into meaningful groups called `lexemes` and categorizing each of them as `tokens`. For example, if the source code was `3` `4` `+` `2` `5` `7` `*` `3`, the lexical analyzer needs to create lexemes as `34`, `+`, `257`, `*`, and `3`. Note that the lexical analyzer identified the occurance of characters `3` and `4` in sequence and produced the lexeme `34`. Similarly, `2`, `5` and `7` occuring in sequence was identified as the token `257`. But `*` and `3` occuring in sequence was not grouped as a single lexeme in a similar way because it doesnt make sense to do so in ARLang. After doing this grouping, each lexeme is categorized. In the above example, upon encountering `34`, lexical analyzer will create a token, categorize it as something like `NumericConstant` and attach the numeric value __34__ to it and adds it to the output. Lets look at a tiny lexical analyzer that accepts a numeric math expression as source code and produces an array of tokens as output.
+Lexical analysis is the first process that happens in the compilation of source code. Lets recall that source code is a sequence of characters. If so, lexical analysis is the process of grouping these characters into meaningful groups called `lexemes` and categorizing each of them as `tokens`. For example, if the source code was `3` `4` `+` `2` `5` `7` `*` `3`, the lexical analyzer needs to create lexemes as `34`, `+`, `257`, `*`, and `3`. Note that the lexical analyzer identified the occurance of characters `3` and `4` in sequence and produced the lexeme `34`. Similarly, `2`, `5` and `7` occuring in sequence was identified as the token `257`. But `*` and `3` occuring in sequence was not grouped as a single lexeme in a similar way because it doesnt make sense to do so in ARLang. After doing this grouping, each lexeme is categorized. In the above example, upon encountering `34`, lexical analyzer will create a token, categorize it as something like `NumericConstant` and attach the numeric value __34__ to it and adds it to the output. Lets look at a tiny lexical analyzer that accepts a numeric math expression as source code and produces a list of tokens as output.
 
 Lets first introduce records that represents each type of token lexical analyzer will produce.
 
@@ -13,7 +13,7 @@ public record TokenOpenParenthesis;
 public record TokenCloseParenthesis;
 public record TokenNumericConstant(double Value);
 
-// TokenInvalid is used to hold invalid characters 
+// TokenInvalid is used to hold invalid lexemes 
 // entered in source code (if they are present).
 public record TokenInvalid(string Value);
 
@@ -74,7 +74,7 @@ public class LexicalAnalyzer
 }
 ```
 
-`LexicalAnalyzer` has a public `ProduceTokens(string)` method. This method is the whole lexical analysis process. We will decompose this into sub-processes shortly. LexicalAnalyzer also has a private `index` property. This property helps us to keep track of which character of the source code we are trying to identify a token using `sourceCode[length]`.
+`LexicalAnalyzer` has a public `ProduceTokens(string)` method. This method is the whole lexical analysis process. We will decompose this into sub-processes shortly. LexicalAnalyzer also has a private `index` property. This property helps us to keep track of which character of the source code we are trying to identify a token using `sourceCode[index]`.
 
 As we said earlier, we need to decompose the `ProduceTokens(string)` method. Lets begin by creating an `IsDigit(char)` method. Why we need this function will make sense way before the end of this chapter. `IsDigit(char)` simply checks if the input character is a digit or not.
 
@@ -98,7 +98,7 @@ private Token GetDigitToken(string sourceCode)
         numberValueString += sourceCode[index];
         index++;
     }
-    bool isParseSuccess = double.TryParse(numberValueString, out double result);
+    bool isParseSuccess = double.TryParse(numberValueString, CultureInfo.InvariantCulture, out double result);
     return isParseSuccess ? new TokenNumericConstant(result) : new TokenInvalid($"Invalid token {numberValueString}");
 }
 ```

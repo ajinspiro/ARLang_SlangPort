@@ -12,7 +12,7 @@ A very large portion of developer population have no idea what is going on insid
 
 The black box we are going to build in this book is called ARLang. It will have capabilities to directly execute effects expressed in input string (from now on this input string will be called source code) and produce exe files that can produce those effects upon execution.
 
-ARLang will have 5 stages in its compilation process. You can picturize them as a pipeline, where one stage's output is the next one's input. 
+ARLang will have 4 stages in its compilation process. You can picturize them as a pipeline, where one stage's output is the next one's input. 
 - Lexical analysis of input string
 - Parsing / Generation of Abstract Syntax Tree
 - Semantic Validation of Abstract Syntax Tree
@@ -20,4 +20,4 @@ ARLang will have 5 stages in its compilation process. You can picturize them as 
     - Execution of effects
     - Creation of executable file
 
-The above stages of ARLang can be classified as front end and back end. Lexical analysis and parsing together constitute front end and semantic validation along with execution/executable file creation constitute back end. So on what criteria is this partitioning made ? In real compilers like clang/llvm or java, the front end part is the part which can be reused between all the different machine architectures the compiler needs to support. This is usually an intermediate representation and such IRs are constructed from the ASTs generated from the parser. ARLang is too simple to have an IR at least in this edition of the book. The backend is the machine specific section that takes the IR and either executes it or compiles it into machine code.
+The above stages of ARLang can be classified as front end and back end. Lexical analysis, parsing and semantic validation together constitute front end and execution of the program/creation of executable file constitute back end. So on what criteria is this partitioning made ? In real compilers like clang/llvm or java, the front end part is the part which can be reused between all the different machine architectures the compiler needs to support. This is usually an intermediate representation and such IRs are constructed from the ASTs generated from the parser. ARLang is too simple to have an IR at least in this edition of the book. The backend is the machine specific section that takes the IR and either executes it or compiles it into machine code.

@@ -18,7 +18,7 @@ graph TD
     class Num1,Num2,Num3 literal;
 ```
 
-Each item appearing in the source code can be a single character like `7`, `+` or `.` or multiple characters in length like `21` or `while` will be represented in the AST as a node. Some nodes will contain other nodes, like `+` while others cannot, like `7`. Former types of nodes are called parent nodes and latter ones are called leaf nodes. To represent each type of node there will be a data structure. So lets start off by building them. We will be using `C# v14` for this book and its very popular `OneOf` library for exploiting algebraic data type composiiton. The first one will be a record `ArlNumericConstant`. In the our AST, all numbers will be leaf nodes and will be contained by this record type.
+Each item the programmer represents in the source code can be in a single character like `7`, `+` or can be in multiple characters in length like `21` or `while`. There will be whitespaces and also characters used for specific things like parenthesis - which are used for denoting nested expressions like `2+3` in `1*(2+3)`. Most of them will be represented in the AST as a node and some of them will not be put into the AST if their purpose has been met - like paranthesis - they are used to represent correct evaluation precedence of the operands in the expression, but once the order is understood, they no longer need to be kept in the AST. Some AST nodes can contain other nodes, like `+` node can contain the operands on which `+` needs to be performed, while nodes like `7` doesnt need to contain other nodes. Former types of nodes are called parent nodes and latter ones are called leaf nodes. To represent each type of node there will be a data structure. So lets start off by building them. We will be using `C# v14` for this book and its very popular `OneOf` library for exploiting algebraic data type composiiton. The first one will be a record `ArlNumericConstant`. In our AST, numbers will be leaf nodes and they will be contained by this record type.
 
 ```csharp
 public record ArlNumericConstant(double Value);
@@ -78,7 +78,7 @@ ArlNumericExpression ast1 = new ArlNumericBinaryOperation(
 );
 ```
 
-Everything looks good till now. For this step, lets ignore how the source code `1+2*3` will be converted into an `ArlNumericExpression`. We will cover that in the next step of this book called Lexical Analysis. As far as this step is concerned, `1+2*3` has been converted into `ArlNumericExpression` as shown above.
+Everything looks good till now. For this step, lets ignore how the source code `1+2*3` will be converted into an `ArlNumericExpression`. We will cover that in the upcoming steps of the book called "Lexical Analysis" and "Parsing". As far as this step is concerned, `1+2*3` has been converted into `ArlNumericExpression` as shown above.
 
 Now the question is what are we going to do with this nested data structure. The answer is we will traverse the AST and compute a value - which is `7` (not `9`). For this we need to write an `Evaluate` function that accepts arbitary `ArlNumericExpression`.
 

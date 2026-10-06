@@ -17,6 +17,7 @@ public class LexicalAnalyzerTests
             new TokenStar(),
             new TokenNumericConstant(3)
             ];
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -36,6 +37,7 @@ public class LexicalAnalyzerTests
             new TokenStar(),
             new TokenNumericConstant(0.55)
             ];
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -55,6 +57,7 @@ public class LexicalAnalyzerTests
             new TokenStar(),
             new TokenNumericConstant(0.55)
             ];
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -88,6 +91,7 @@ public class LexicalAnalyzerTests
             new TokenMinus()
             ];
 
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -104,6 +108,7 @@ public class LexicalAnalyzerTests
             new TokenInvalid($"Invalid token {expression1}")
             ];
 
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -122,6 +127,7 @@ public class LexicalAnalyzerTests
             new TokenNumericConstant(2)
             ];
 
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
