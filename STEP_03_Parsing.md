@@ -45,3 +45,84 @@ public class Parser
     }
 }
 ```
+
+Lets start off by implementing the `factor` production rule inside the `ParseFactor` method. The `factor` production has two "alternatives". Either a factor can be a `NUMBER` or it can be a parenthesised nested expression. The order of the productions matter and the order of the alternatives of a production also matter. So, our `ParseFactor` method should first check if the current token is a number and if so, move to next token and return an instance of `ArlNumericConstant`. Lets implement that alternative before explaining furthur.
+
+```csharp
+private ArlParseResult ParseFactor()
+{
+    if (tokens[index].IsTokenNumericConstant)
+    {
+        double value = tokens[index].AsTokenNumericConstant.Value;
+        ArlNumericConstant astNode = new(value);
+        ArlNumericExpression astNodeUnion = new(astNode);
+        index++;
+        return astNodeUnion;
+    }
+    throw new NotImplementedException();
+}
+```
+
+If current token was not a numeric constant, then according to our `factor` production, it must be a parenthesised nested expression. We will check that by checking if the current token is open parenthesis. If so, we will move to the next token and try to parse an expression by calling `ParseExpression`. After we parsed the nested expression, we should be left with a close parenthesis token. If we encounter a close parenthesis token, we will simply move to the next token and return an instance of `ArlNumericExpression` wrapped in `ArlParseResult` union. Lets see that.
+
+```csharp
+private ArlParseResult ParseFactor()
+{
+    if (tokens[index].IsTokenNumericConstant) 
+    {
+        double value = tokens[index].AsTokenNumericConstant.Value;
+        ArlNumericConstant astNode = new(value);
+        ArlNumericExpression astNodeUnion = new(astNode);
+        index++;
+        return astNodeUnion;
+    }
+    if (tokens[index].IsTokenOpenParenthesis)
+    {
+        index++;
+        ArlParseResult nestedExpressionResult = ParseExpression();
+        if (nestedExpressionResult.IsError)
+        {
+            return nestedExpressionResult;
+        }
+        if (!tokens[index].IsTokenCloseParenthesis)
+        {
+            return new ArlParseError("Parse error - close parenthesis missing.");
+        }
+        index++;
+        return nestedExpressionResult;
+    }
+    throw new NotImplementedException();
+}
+```
+
+If neither of these alternatives of `factor` was not satisfied, then there is bad news, the user input does not follow our grammer. We will reject it with an instance of `ArlParseError`.
+
+```csharp
+private ArlParseResult ParseFactor()
+{
+    if (tokens[index].IsTokenNumericConstant) 
+    {
+        double value = tokens[index].AsTokenNumericConstant.Value;
+        ArlNumericConstant astNode = new(value);
+        ArlNumericExpression astNodeUnion = new(astNode);
+        index++;
+        return astNodeUnion;
+    }
+    if (tokens[index].IsTokenOpenParenthesis)
+    {
+        index++;
+        ArlParseResult nestedExpressionResult = ParseExpression();
+        if (nestedExpressionResult.IsError)
+        {
+            return nestedExpressionResult;
+        }
+        if (!tokens[index].IsTokenCloseParenthesis)
+        {
+            return new ArlParseError("Parse error - close parenthesis missing.");
+        }
+        index++;
+        return nestedExpressionResult;
+    }
+    return new ArlParseError("Something went wrong - control flow should never reach here");
+}
+```
