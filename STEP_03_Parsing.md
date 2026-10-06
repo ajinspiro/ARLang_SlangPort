@@ -15,7 +15,7 @@ unary      = ("+" | "-") unary | factor ;
 factor     = NUMBER | "(" expression ")" ;
 ```
 
-Each line in the above EBNF represents a single production rule, which translates to a single method inside the parser itself. Now lets look at our parser at a high level.
+Each line in the above EBNF represents a single production rule, which translates to a single method inside the parser itself. Now lets look at our parser at a high level. You can see there is a one to one correspondance to the methods in the parser and the production rules in our EBNF. `expressison` in EBNF is implemented as `ParseExpression` method in our parser, `term` in EBNF is implemented as `ParseTerm`, `unary` is implemented as `ParseUnaryExpression` and `factor` is implemented as `ParseFactor`.
 
 ```csharp
 public class Parser
