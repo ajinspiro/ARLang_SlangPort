@@ -150,7 +150,7 @@ private ArlParseResult ParseFactor()
 }
 ```
 
-## Step 12 - Implementing production rule `unary`
+## Step 2 - Implementing production rule `unary`
 
 <h3 align="center"><code>unary = ("+" | "-") unary | factor ;</code></h3>
 
@@ -198,5 +198,107 @@ private ArlParseResult ParseUnaryExpression()
         return new ArlNumericExpression(unaryOperation);
     }
     return ParseFactor();
+}
+```
+
+## Step 3 - Implementing production rule `term`
+
+<h3 align="center"><code>term = unary { ("*" | "/") unary } ;</code></h3>
+
+Lets now implement our grammar's `term` production inside the `ParseTerm` method. Unlike the productions we saw earlier, this one only has one alternative. For this, first we will try to parse a `unary` and keep it in an `lhsResult` variable.
+
+```csharp
+private ArlParseResult ParseTerm()
+{
+    ArlParseResult lhsResult = ParseUnaryExpression();
+    if (lhsResult.IsError)
+    {
+        return lhsResult.AsError;
+    }
+    // TODO
+    return lhsResult;
+}
+```
+
+As per our production, after parsing unary, we will check if current token is `*` or `/`. If not so, we reached the end of the term and `lhsResult` will be returned. But if currnet token is `*` or `/`, we will save it in memory and try to parse another unary and save it in `rhsResult`. On successful parse, we will replace the `lhsResult` with a new `ArlNumericBinaryOperation` where `Lhs` is current value of `lhsResult`, operator is the previously saved operator and `Rhs` will be `rhsResult`. The entire thing is looped to parse all the unaries in the expression.
+
+```csharp
+private ArlParseResult ParseTerm()
+{
+    ArlParseResult lhsResult = ParseUnaryExpression();
+    if (lhsResult.IsError)
+    {
+        return lhsResult.AsError;
+    }
+    while (index + 1 <= tokens.Count && (tokens[index].IsTokenStar || tokens[index].IsTokenSlash))
+    {
+        ArlNumericBinaryOperator operatorUnion = tokens[index].IsTokenStar ? new Mul() : new Div();
+        index++;
+        ArlParseResult rhsResult = ParseUnaryExpression();
+        if (rhsResult.IsError)
+        {
+            return rhsResult;
+        }
+        ArlNumericExpression binaryOperation = new ArlNumericBinaryOperation(lhsResult.AsResult, operatorUnion, rhsResult.AsResult);
+        lhsResult = binaryOperation;
+    }
+    return lhsResult;
+}
+```
+
+## Step 4 - Implementing production rule `expression`
+
+<h3 align="center"><code>expression = term { ("+" | "-") term } ;</code></h3>
+
+Lets now implement our grammar's `expression` production inside the `ParseExpression` method. Just like the production `term`, this one also only has one alternative. For this, first we will try to parse a `term` and keep it in an `lhsResult` variable.
+
+```csharp
+private ArlParseResult ParseExpression()
+{
+    ArlParseResult lhsResult = ParseTerm();
+    if (lhsResult.IsError)
+    {
+        return lhsResult.AsError;
+    }
+    // TODO
+    return lhsResult;
+}
+```
+
+As per our production, after parsing term, we will check if current token is `+` or `-`. If not so, we reached the end of the expression and `lhsResult` will be returned. But if currnet token is `+` or `-`, we will save it in memory and try to parse another term and save it in `rhsResult`. On successful parse, we will replace the `lhsResult` with a new `ArlNumericBinaryOperation` where `Lhs` is current value of `lhsResult`, operator is the previously saved operator and `Rhs` will be `rhsResult`. The entire thing is looped to parse all the terms in the expression.
+
+```csharp
+private ArlParseResult ParseExpression()
+{
+    ArlParseResult lhsResult = ParseTerm();
+    if (lhsResult.IsError)
+    {
+        return lhsResult.AsError;
+    }
+    while (index + 1 <= tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
+    {
+        ArlNumericBinaryOperator operatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
+        index++;
+        ArlParseResult rhsResult = ParseTerm();
+        if (rhsResult.IsError)
+        {
+            return rhsResult;
+        }
+        ArlNumericExpression binaryOperation = new ArlNumericBinaryOperation(lhsResult.AsResult, operatorUnion, rhsResult.AsResult);
+        lhsResult = binaryOperation;
+    }
+    return lhsResult;
+}
+```
+
+Finally lets conclude this step by implementing the top level `Parse` method. It just stores the token list produced by lexical analyzer in a `tokens` field, triggers the AST generation by calling off `ParseExpression`, stores the result in a `result` variable, resets the index used to scan the token list to 0 so that the parser instance can be resed if that is desired, then returns the result.
+
+```csharp
+public ArlParseResult Parse(ImmutableList<Token> tokens)
+{
+    this.tokens = tokens;
+    var result = ParseExpression();
+    index = 0;
+    return result;
 }
 ```
