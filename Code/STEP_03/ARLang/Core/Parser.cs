@@ -95,7 +95,7 @@ public class Parser
             double value = tokens[index].AsTokenNumericConstant.Value;
             ArlNumericConstant astNode = new(value);
             ArlNumericExpression astNodeUnion = new(astNode);
-            index++;
+            index++; // move to next token
             return astNodeUnion;
         }
         if (tokens[index].IsTokenOpenParenthesis) // nested expression

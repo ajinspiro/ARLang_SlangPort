@@ -6,6 +6,19 @@ The parser parsers the list of tokens by following a formal grammar. Formal gram
 
 As we saw earlier, if a user tried to execute/compile for example, the expression `(*)76.23/11+-`, the list of tokens produced by lexical analyzer will not have any invalid token. But that doesnt mean there is no problem with that token list. The ordering of the tokens within the list is incorrect. The sequence is not in valid infix notation and thus ARLang's parser cannot generate an AST from this token list. To represent this type of scenario where the user input was lexically valid but structurally incorrect, we are going to introduce a type called `ArlParseError`. The parser will be returning a union `ArlParseResult` which can be either an instance of `ArlNumericExpression` or `ArlParseError`.
 
+```csharp
+public record ArlParseError(string Message);
+
+[GenerateOneOf]
+public partial class ArlParseResult : OneOfBase<ArlNumericExpression, ArlParseError>
+{
+    public bool IsResult => IsT0;
+    public bool IsError => IsT1;
+    public ArlNumericExpression AsResult => AsT0;
+    public ArlParseError AsError => AsT1;
+};
+```
+
 Before implementing the parser, lets see the "production rules" which collectively are what the grammar is in EBNF notation. It has been decided that EBNF is out of context for this book. (Might change later). 
 
 ```ebnf
@@ -46,7 +59,16 @@ public class Parser
 }
 ```
 
-Lets start off by implementing the `factor` production rule inside the `ParseFactor` method. The `factor` production has two "alternatives". Either a factor can be a `NUMBER` or it can be a parenthesised nested expression. The order of the productions matter and the order of the alternatives of a production also matter. So, our `ParseFactor` method should first check if the current token is a number and if so, move to next token and return an instance of `ArlNumericConstant`. Lets implement that alternative before explaining furthur.
+## Step 1 - Implementing production rule `factor`
+
+<h3 align="center"><code>factor = NUMBER | "(" expression ")" ;</code></h3>
+
+
+Lets start off by implementing the 4th production rule `factor` inside the `ParseFactor` method. The `factor` production has two "alternatives". Either a factor can be a `NUMBER` or it can be a parenthesised nested expression. The order of the productions matter and the order of the alternatives within that production also matter.
+
+### Alternative 1 - `NUMBER`
+
+Our `ParseFactor` method should first check if the current token is a number and if so, move to next token and return an instance of `ArlNumericConstant`. Lets implement that alternative before explaining furthur.
 
 ```csharp
 private ArlParseResult ParseFactor()
@@ -56,14 +78,15 @@ private ArlParseResult ParseFactor()
         double value = tokens[index].AsTokenNumericConstant.Value;
         ArlNumericConstant astNode = new(value);
         ArlNumericExpression astNodeUnion = new(astNode);
-        index++;
+        index++; // move to next token
         return astNodeUnion;
     }
     throw new NotImplementedException();
 }
 ```
 
-If current token was not a numeric constant, then according to our `factor` production, it must be a parenthesised nested expression. We will check that by checking if the current token is open parenthesis. If so, we will move to the next token and try to parse an expression by calling `ParseExpression`. After we parsed the nested expression, we should be left with a close parenthesis token. If we encounter a close parenthesis token, we will simply move to the next token and return an instance of `ArlNumericExpression` wrapped in `ArlParseResult` union. Lets see that.
+### Alternative 2 - `"(" expression ")"`
+If current token was not a numeric constant, then according to our `factor` production, it must be a parenthesised nested expression. We will check that by checking if the current token is open parenthesis. If so, we will move to the next token and try to parse an expression by calling `ParseExpression`. After we parsed the nested expression, we should be left with a close parenthesis token. If we encounter a close parenthesis token, the parse operation was successful and we will simply move to the next token and return an instance of `ArlNumericExpression` wrapped in `ArlParseResult` union. Lets see that. If not, the programmer didn't properly close the nested expression using `)` so we will produce an `ArlParseError`.
 
 ```csharp
 private ArlParseResult ParseFactor()
@@ -124,5 +147,56 @@ private ArlParseResult ParseFactor()
         return nestedExpressionResult;
     }
     return new ArlParseError("Something went wrong - control flow should never reach here");
+}
+```
+
+## Step 12 - Implementing production rule `unary`
+
+<h3 align="center"><code>unary = ("+" | "-") unary | factor ;</code></h3>
+
+Lets now implement our grammar's `unary` production inside the `ParseUnaryExpression` method. As per its definition, there are two alternatives for it.
+
+### Alternative 1 - `("+" | "-") unary`
+If the current token matches a `+` or `-`, then the `ParseUnaryExpression` method will save this operator in memory, move token poiner to next token and recurse (call itself). This recursed execution of `ParseUnaryExpression` will match with the second alternative `factor`. The result of `ParseFactor` and the previous operator that was kept in memory togeher will be used to create a `ArlNumericUnaryOperation` instance and then will be returned. 
+
+```csharp
+private ArlParseResult ParseUnaryExpression()
+{
+    if (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus)
+    {
+        ArlNumericUnaryOperator unaryOperatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
+        index++;
+        ArlParseResult unaryOperandResult = ParseUnaryExpression();
+        if (unaryOperandResult.IsError)
+        {
+            return unaryOperandResult;
+        }
+        ArlNumericUnaryOperation unaryOperation = new(unaryOperatorUnion, unaryOperandResult.AsResult);
+        return new ArlNumericExpression(unaryOperation);
+    }
+    throw new NotImplementedException();
+}
+```
+
+### Alternative 2 - `factor`
+
+If the current token does not match `+` or `-`, then alternative 2 will be used, which is `factor`. `ParseFactor` method will be invoked and whatever returned will be returned by `ParseUnaryExpression` directly.
+
+```csharp
+private ArlParseResult ParseUnaryExpression()
+{
+    if (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus)
+    {
+        ArlNumericUnaryOperator unaryOperatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
+        index++;
+        ArlParseResult unaryOperandResult = ParseUnaryExpression();
+        if (unaryOperandResult.IsError)
+        {
+            return unaryOperandResult;
+        }
+        ArlNumericUnaryOperation unaryOperation = new(unaryOperatorUnion, unaryOperandResult.AsResult);
+        return new ArlNumericExpression(unaryOperation);
+    }
+    return ParseFactor();
 }
 ```
