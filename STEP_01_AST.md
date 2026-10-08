@@ -1,6 +1,6 @@
 # Abstract Syntax Tree
 
-The authors think a pragmatic guide written for busy developers who wants to begin understanding the mysterious black box from the first pages itself need to start from the AST. So, we will start by building the data structures required to build the AST of arbitary mathematical expressions and an evaluation engine that can evaluate those experssions to produce its value in this stage. Examples of expressions are `1+2` and `1+2*3`. To get correct result while evaluating one, we need to keep in mind the BODMAS precedence rule. If we dont, we will get `9` instead of `7` for `1+2*3`.
+The authors think a pragmatic guide written for busy developers who wants to begin understanding the mysterious black box from the first pages itself need to start from the AST. So, we will start by building the data structures required to build the AST of any arbitary mathematical expression. We will also build an evaluation engine that can evaluate those experssions and produce its value in this step of the book. Examples of expressions are `1+2` and `1+2*3`. To get correct result while evaluating one, our evaluation engine will need a precedence rule, something like BODMAS. If it doesnt, we will get `9` instead of `7` for `1+2*3`.
 
 Abstract Syntax Tree is a representation of our source code in a hierarchical structure. The meaning we intented when writing our source code is not lost when its converted to AST. For example, a source string `1+2*3` will become:
 
