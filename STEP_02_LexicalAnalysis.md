@@ -160,11 +160,12 @@ _Check `STEP_02` in `Code` folder for full code._
 Lets test it out. Lets create a `LexicalAnalyzerTests` class and write a `Test1` test method in our test project to see if correct tokens are generated for `1+2*3`.
 
 Our test methods will look like this:
+
 ```csharp
 public class LexicalAnalyzerTests
 {
     [Fact]
-    public void Test1()
+    public void ExpressionContainsNoInvalidCharacters_SuccessfulLexicalOutput()
     {
         string expression1 = "1+2*3";
         var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
@@ -176,6 +177,7 @@ public class LexicalAnalyzerTests
             new TokenStar(),
             new TokenNumericConstant(3)
             ];
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -183,7 +185,7 @@ public class LexicalAnalyzerTests
     }
 
     [Fact]
-    public void Test2()
+    public void ExpressionWithWhitespacesContainsNoInvalidCharacters_SuccessfulLexicalOutput()
     {
         string expression1 = " 34 + 2.3 * 0.55";
         var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
@@ -195,6 +197,7 @@ public class LexicalAnalyzerTests
             new TokenStar(),
             new TokenNumericConstant(0.55)
             ];
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -202,7 +205,7 @@ public class LexicalAnalyzerTests
     }
 
     [Fact]
-    public void Test3()
+    public void ExpressionWithWhitespacesAndTabsContainsNoInvalidCharacters_SuccessfulLexicalOutput()
     {
         string expression1 = "\t 34   + 2.3\t  \n * 0.55\t";
         var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
@@ -214,6 +217,7 @@ public class LexicalAnalyzerTests
             new TokenStar(),
             new TokenNumericConstant(0.55)
             ];
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -221,7 +225,7 @@ public class LexicalAnalyzerTests
     }
 
     [Fact]
-    public void Test4()
+    public void EmptyExpression_EmptyTokenResult()
     {
         string expression1 = "";
         var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
@@ -231,7 +235,7 @@ public class LexicalAnalyzerTests
     }
 
     [Fact]
-    public void Test5_SemanticallyInvalidButLexicallyValidExpression()
+    public void IncorrectExpressionButWithoutAnyInvalidCharacters_SuccessfulLexicalOutput()
     {
         string expression1 = "(*)76.23/11+-";
         var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
@@ -247,6 +251,7 @@ public class LexicalAnalyzerTests
             new TokenMinus()
             ];
 
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -254,7 +259,7 @@ public class LexicalAnalyzerTests
     }
 
     [Fact]
-    public void Test6_InvalidExpression()
+    public void IncorrectExpressionWithInvalidCharacter_ContainsInvalidToken()
     {
         string expression1 = "6..2";
         var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
@@ -263,6 +268,7 @@ public class LexicalAnalyzerTests
             new TokenInvalid($"Invalid token {expression1}")
             ];
 
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);
@@ -270,7 +276,7 @@ public class LexicalAnalyzerTests
     }
 
     [Fact]
-    public void Test7_InvalidExpression()
+    public void IncorrectExpressionWithInvalidCharacter2_ContainsInvalidToken()
     {
         string expression1 = "1~2";
         var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
@@ -281,6 +287,43 @@ public class LexicalAnalyzerTests
             new TokenNumericConstant(2)
             ];
 
+        Assert.Equal(expected.Count, actuals.Count);
+        for (int i = 0; i < actuals.Count; i++)
+        {
+            Assert.Equal(expected[i], actuals[i]);
+        }
+    }
+
+    [Fact]
+    public void InvalidExpressionWithoutAnyInvalidCharacter()
+    {
+        string expression1 = "1 2";
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
+
+        List<Token> expected = [
+            new TokenNumericConstant(1),
+            new TokenNumericConstant(2)
+        ];
+
+        Assert.Equal(expected.Count, actuals.Count);
+        for (int i = 0; i < actuals.Count; i++)
+        {
+            Assert.Equal(expected[i], actuals[i]);
+        }
+    }
+
+    [Fact]
+    public void InvalidExpressionWithAnyInvalidCharacter()
+    {
+        string expression1 = "1)";
+        var actuals = new LexicalAnalyzer().ProduceTokens(expression1);
+
+        List<Token> expected = [
+            new TokenNumericConstant(1),
+            new TokenCloseParenthesis()
+        ];
+
+        Assert.Equal(expected.Count, actuals.Count);
         for (int i = 0; i < actuals.Count; i++)
         {
             Assert.Equal(expected[i], actuals[i]);

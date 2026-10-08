@@ -37,6 +37,10 @@ public class Parser
     private ImmutableList<Token> tokens = [];
     public ArlParseResult Parse(ImmutableList<Token> tokens)
     {
+        if (tokens.Count == 0)
+        {
+            return new ArlParseError("Empty source code.");
+        }
         this.tokens = tokens;
         throw new NotImplementedException();
     }
@@ -64,7 +68,7 @@ public class Parser
 <h3 align="center"><code>factor = NUMBER | "(" expression ")" ;</code></h3>
 
 
-Lets start off by implementing the 4th production rule `factor` inside the `ParseFactor` method. The `factor` production has two "alternatives". Either a factor can be a `NUMBER` or it can be a parenthesised nested expression. The order of the productions matter and the order of the alternatives within that production also matter.
+Lets start off by implementing the 4th production rule `factor` inside the `ParseFactor` method. The `factor` production has two "alternatives". Either a factor can be a `NUMBER` or it can be a parenthesised nested expression.
 
 ### Alternative 1 - `NUMBER`
 
@@ -73,7 +77,7 @@ Our `ParseFactor` method should first check if the current token is a number and
 ```csharp
 private ArlParseResult ParseFactor()
 {
-    if (tokens[index].IsTokenNumericConstant)
+    if (index < tokens.Count && tokens[index].IsTokenNumericConstant)
     {
         double value = tokens[index].AsTokenNumericConstant.Value;
         ArlNumericConstant astNode = new(value);
@@ -91,7 +95,7 @@ If current token was not a numeric constant, then according to our `factor` prod
 ```csharp
 private ArlParseResult ParseFactor()
 {
-    if (tokens[index].IsTokenNumericConstant) 
+    if (index < tokens.Count && tokens[index].IsTokenNumericConstant)
     {
         double value = tokens[index].AsTokenNumericConstant.Value;
         ArlNumericConstant astNode = new(value);
@@ -99,7 +103,7 @@ private ArlParseResult ParseFactor()
         index++;
         return astNodeUnion;
     }
-    if (tokens[index].IsTokenOpenParenthesis)
+    if (index < tokens.Count && tokens[index].IsTokenOpenParenthesis) // nested expression
     {
         index++;
         ArlParseResult nestedExpressionResult = ParseExpression();
@@ -107,7 +111,7 @@ private ArlParseResult ParseFactor()
         {
             return nestedExpressionResult;
         }
-        if (!tokens[index].IsTokenCloseParenthesis)
+        if (!(index < tokens.Count && tokens[index].IsTokenCloseParenthesis))
         {
             return new ArlParseError("Parse error - close parenthesis missing.");
         }
@@ -123,7 +127,7 @@ If neither of these alternatives of `factor` was not satisfied, then there is ba
 ```csharp
 private ArlParseResult ParseFactor()
 {
-    if (tokens[index].IsTokenNumericConstant) 
+    if (index < tokens.Count && tokens[index].IsTokenNumericConstant)
     {
         double value = tokens[index].AsTokenNumericConstant.Value;
         ArlNumericConstant astNode = new(value);
@@ -131,7 +135,7 @@ private ArlParseResult ParseFactor()
         index++;
         return astNodeUnion;
     }
-    if (tokens[index].IsTokenOpenParenthesis)
+    if (index < tokens.Count && tokens[index].IsTokenOpenParenthesis) // nested expression
     {
         index++;
         ArlParseResult nestedExpressionResult = ParseExpression();
@@ -139,7 +143,7 @@ private ArlParseResult ParseFactor()
         {
             return nestedExpressionResult;
         }
-        if (!tokens[index].IsTokenCloseParenthesis)
+        if (!(index < tokens.Count && tokens[index].IsTokenCloseParenthesis))
         {
             return new ArlParseError("Parse error - close parenthesis missing.");
         }
@@ -162,7 +166,7 @@ If the current token matches a `+` or `-`, then the `ParseUnaryExpression` metho
 ```csharp
 private ArlParseResult ParseUnaryExpression()
 {
-    if (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus)
+    if (index < tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
     {
         ArlNumericUnaryOperator unaryOperatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
         index++;
@@ -185,7 +189,7 @@ If the current token does not match `+` or `-`, then alternative 2 will be used,
 ```csharp
 private ArlParseResult ParseUnaryExpression()
 {
-    if (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus)
+    if (index < tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
     {
         ArlNumericUnaryOperator unaryOperatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
         index++;
@@ -230,7 +234,7 @@ private ArlParseResult ParseTerm()
     {
         return lhsResult.AsError;
     }
-    while (index + 1 <= tokens.Count && (tokens[index].IsTokenStar || tokens[index].IsTokenSlash))
+    while (index < tokens.Count && (tokens[index].IsTokenStar || tokens[index].IsTokenSlash))
     {
         ArlNumericBinaryOperator operatorUnion = tokens[index].IsTokenStar ? new Mul() : new Div();
         index++;
@@ -275,7 +279,7 @@ private ArlParseResult ParseExpression()
     {
         return lhsResult.AsError;
     }
-    while (index + 1 <= tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
+    while (index < tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
     {
         ArlNumericBinaryOperator operatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
         index++;
@@ -296,9 +300,80 @@ Finally lets conclude this step by implementing the top level `Parse` method. It
 ```csharp
 public ArlParseResult Parse(ImmutableList<Token> tokens)
 {
+    if (tokens.Count == 0)
+    {
+        return new ArlParseError("Empty source code.");
+    }
     this.tokens = tokens;
     var result = ParseExpression();
+    // TODO
     index = 0;
     return result;
+}
+```
+
+We have one more problem. If the user tries to parse something like `1 2` or `1)`, our `Parse` method will return `ArlNumericConstant(1)` instead of returning a `ArlParseError`. We need to fix that by checking if all tokens generated by the lexer has been consumed by the parser.
+
+```csharp
+if (index != tokens.Count) // before ParseExpression returns, index must become tokens.Count.
+{
+    result = new ArlParseError("Failed to consume all tokens because of malformed input.");
+}
+```
+
+Our final `Parse` method will look like, 
+
+```csharp
+public ArlParseResult Parse(ImmutableList<Token> tokens)
+{        
+    if (tokens.Count == 0)
+    {
+        return new ArlParseError("Empty source code.");
+    }
+    this.tokens = tokens;
+    var result = ParseExpression();
+    if (index != tokens.Count) // before ParseExpression returns, index must become tokens.Count.
+    {
+        result = new ArlParseError("Failed to consume all tokens because of malformed input.");
+    }
+    index = 0;
+    return result;
+}
+```
+
+The unit tests for our parser will be:
+
+```csharp
+public class ParserTests
+{
+    [Theory(DisplayName = "Valid expressions produce result")]
+    [InlineData("1+2*3", 7)]
+    [InlineData("-2*(3+3)", -12)]
+    [InlineData("-1 + 2", 1)]
+    [InlineData("2 * -3 + 4", -2)]
+    [InlineData("--(1 + 2)", 3)]
+    public void Parser_Evaluation_Tests(string sourceCode, double expected)
+    {
+        var tokens = new LexicalAnalyzer().ProduceTokens(sourceCode);
+        var parseResult = new Parser().Parse(tokens);
+        tokens.ForEach(token => Assert.IsNotType<TokenInvalid>(token.Value));
+        Assert.True(parseResult.IsResult);
+        Assert.Equal(expected, parseResult.AsResult.Evaluate());
+    }
+
+    [Theory(DisplayName = "Valid token sequence that form an invalid expression returns parse error")]
+    [InlineData("")]
+    [InlineData("1 2")]
+    [InlineData("(*)76.23/11+-")]
+    [InlineData("1)")]
+    [InlineData("1+")]
+    [InlineData("1+(2*3")]
+    public void InvalidExpression_ReturnsParseError(string sourceCode)
+    {
+        var tokens = new LexicalAnalyzer().ProduceTokens(sourceCode);
+        var parseResult = new Parser().Parse(tokens);
+        tokens.ForEach(token => Assert.IsNotType<TokenInvalid>(token.Value));
+        Assert.IsType<ArlParseError>(parseResult.Value);
+    }
 }
 ```

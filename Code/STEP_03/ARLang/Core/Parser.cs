@@ -21,8 +21,16 @@ public class Parser
 
     public ArlParseResult Parse(ImmutableList<Token> tokens)
     {
+        if (tokens.Count == 0)
+        {
+            return new ArlParseError("Empty source code.");
+        }
         this.tokens = tokens;
         var result = ParseExpression();
+        if (index != tokens.Count) // before ParseExpression returns, index must become tokens.Count.
+        {
+            result = new ArlParseError("Failed to consume all tokens because of malformed input.");
+        }
         index = 0;
         return result;
     }
@@ -34,7 +42,7 @@ public class Parser
         {
             return lhsResult.AsError;
         }
-        while (index + 1 <= tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
+        while (index < tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
         {
             ArlNumericBinaryOperator operatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
             index++;
@@ -56,7 +64,7 @@ public class Parser
         {
             return lhsResult.AsError;
         }
-        while (index + 1 <= tokens.Count && (tokens[index].IsTokenStar || tokens[index].IsTokenSlash))
+        while (index < tokens.Count && (tokens[index].IsTokenStar || tokens[index].IsTokenSlash))
         {
             ArlNumericBinaryOperator operatorUnion = tokens[index].IsTokenStar ? new Mul() : new Div();
             index++;
@@ -73,7 +81,7 @@ public class Parser
 
     private ArlParseResult ParseUnaryExpression()
     {
-        if (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus)
+        if (index < tokens.Count && (tokens[index].IsTokenPlus || tokens[index].IsTokenMinus))
         {
             ArlNumericUnaryOperator unaryOperatorUnion = tokens[index].IsTokenPlus ? new Add() : new Sub();
             index++;
@@ -90,7 +98,7 @@ public class Parser
 
     private ArlParseResult ParseFactor()
     {
-        if (tokens[index].IsTokenNumericConstant) // numeric expression
+        if (index < tokens.Count && tokens[index].IsTokenNumericConstant) // numeric expression
         {
             double value = tokens[index].AsTokenNumericConstant.Value;
             ArlNumericConstant astNode = new(value);
@@ -98,7 +106,7 @@ public class Parser
             index++; // move to next token
             return astNodeUnion;
         }
-        if (tokens[index].IsTokenOpenParenthesis) // nested expression
+        if (index < tokens.Count && tokens[index].IsTokenOpenParenthesis) // nested expression
         {
             index++;
             ArlParseResult nestedExpressionResult = ParseExpression();
@@ -106,7 +114,7 @@ public class Parser
             {
                 return nestedExpressionResult;
             }
-            if (!tokens[index].IsTokenCloseParenthesis)
+            if (!(index < tokens.Count && tokens[index].IsTokenCloseParenthesis))
             {
                 return new ArlParseError("Parse error - close parenthesis missing.");
             }
